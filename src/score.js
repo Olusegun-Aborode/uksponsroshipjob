@@ -18,9 +18,14 @@ const NEGATIVE = [
   'sponsorship is not available', 'sponsorship not available', 'unable to provide sponsorship',
   'we are unable to offer sponsorship', 'no visa sponsorship is available'
 ];
+// Used for the quick "fit" indicator on each card. Spans the candidate's full scope
+// (data, product, project/delivery, CRM/marketing ops) so non-data roles score meaningfully too.
 const PROFILE = [
   'sql', 'python', 'data', 'analytics', 'analyst', 'business intelligence', 'power bi',
-  'tableau', 'etl', 'pipeline', 'dashboard', 'crm', 'product manager', 'growth', 'snowflake'
+  'tableau', 'etl', 'pipeline', 'dashboard', 'snowflake',
+  'product', 'product owner', 'roadmap', 'stakeholder', 'requirements', 'discovery',
+  'agile', 'scrum', 'delivery', 'project', 'programme', 'jira', 'pmo',
+  'crm', 'lifecycle', 'email', 'marketing', 'growth', 'segment', 'hubspot', 'salesforce'
 ];
 
 function findPhrase(text, list) {
