@@ -59,7 +59,7 @@ function score(job) {
   const onSW = reg.match !== 'none' && reg.skilledWorker;       // licensed for Skilled Worker
   const onOther = reg.match !== 'none' && !reg.skilledWorker;   // licensed, but not Skilled Worker
   const strong = reg.match === 'exact';                          // exact name vs fuzzy match
-  const matchNote = reg.match === 'fuzzy' ? ' (fuzzy name match — confirm the legal entity)' : '';
+  const matchNote = reg.match === 'fuzzy' ? ' (fuzzy name match, confirm the legal entity)' : '';
 
   let tier, confidence, reason;
 
@@ -71,25 +71,25 @@ function score(job) {
     reason = `Top priority: posting states sponsorship ("${pos}") AND ${reg.name} holds a Skilled Worker licence (${reg.rating || 'listed'}).`;
   } else if (pos && onSW) {
     tier = 'A'; confidence = 84;
-    reason = `Posting states sponsorship ("${pos}"); likely Skilled Worker sponsor (${reg.name})${matchNote} — confirm the exact legal entity.`;
+    reason = `Posting states sponsorship ("${pos}"); likely Skilled Worker sponsor (${reg.name})${matchNote}, confirm the exact legal entity.`;
   } else if (pos && onOther) {
     tier = 'B-'; confidence = 50;
     reason = `Posting claims sponsorship, but ${reg.name} is licensed only for: ${reg.routes}. Confirm they can sponsor a Skilled Worker for this role.`;
   } else if (pos) {
     tier = 'B-'; confidence = 60;
-    reason = `Posting claims sponsorship ("${pos}") but employer not found on the register — verify the legal entity name before applying.`;
+    reason = `Posting claims sponsorship ("${pos}") but employer not found on the register, verify the legal entity name before applying.`;
   } else if (onSW && strong) {
     tier = 'B'; confidence = 55;
-    reason = `${reg.name} holds a Skilled Worker licence (${reg.rating || 'listed'}), but this posting doesn't mention sponsorship — ask the recruiter early.`;
+    reason = `${reg.name} holds a Skilled Worker licence (${reg.rating || 'listed'}), but this posting doesn't mention sponsorship, ask the recruiter early.`;
   } else if (onSW) {
     tier = 'C'; confidence = 35;
     reason = `Likely Skilled Worker sponsor (${reg.name})${matchNote}; posting silent. Verify the entity before investing time.`;
   } else if (onOther) {
     tier = 'C'; confidence = 22;
-    reason = `${reg.name} is a licensed sponsor but NOT for the Skilled Worker route (${reg.routes}) — probably not usable for this role.`;
+    reason = `${reg.name} is a licensed sponsor but NOT for the Skilled Worker route (${reg.routes}), probably not usable for this role.`;
   } else {
     tier = 'unknown'; confidence = 15;
-    reason = `No sponsorship signal and employer not matched on the register. Low confidence — confirm manually.`;
+    reason = `No sponsorship signal and employer not matched on the register. Low confidence, confirm manually.`;
   }
 
   // --- salary gate: can they legally sponsor THIS role at the advertised pay? ---
@@ -97,12 +97,12 @@ function score(job) {
   if (tier !== 'excluded') {
     if (sc.status === 'fail') {
       confidence = Math.min(confidence, 20);
-      reason += ` ⚠ Advertised pay is below the ~${gbp(sc.required)} Skilled Worker floor${sc.soc_title ? ` for ${sc.soc_title}` : ''} — likely NOT sponsorable at this salary.`;
+      reason += ` ⚠ Advertised pay is below the ~${gbp(sc.required)} Skilled Worker floor${sc.soc_title ? ` for ${sc.soc_title}` : ''}, likely NOT sponsorable at this salary.`;
     } else if (sc.status === 'pass') {
       confidence = Math.min(100, confidence + 4);
       reason += ` ✓ Salary clears the ~${gbp(sc.required)} sponsorship floor.`;
     } else if (sc.status === 'borderline') {
-      reason += ` ◑ Salary range straddles the ~${gbp(sc.required)} floor — confirm the offer clears it.`;
+      reason += ` ◑ Salary range straddles the ~${gbp(sc.required)} floor, confirm the offer clears it.`;
     }
   }
 

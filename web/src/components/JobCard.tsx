@@ -75,7 +75,7 @@ export function JobCard({ job, aiEnabled, onTailor }: { job: Job; aiEnabled: boo
           </label>
         </div>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={() => api.updateJob(job.id, { user_notes: notes })}
-          placeholder="Notes — recruiter, follow-up date, SOC check…" className="mt-2 min-h-[34px] text-xs" />
+          placeholder="Notes, recruiter, follow-up date, SOC check…" className="mt-2 min-h-[34px] text-xs" />
       </div>
     </div>
   )

@@ -37,7 +37,7 @@ export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) 
         <div className="flex items-center gap-2.5 rounded-full border bg-card py-1 pl-3.5 pr-1.5">
           {hasCV
             ? <Badge variant="success" className="gap-1 font-medium"><FileText className="h-3 w-3" />{ai?.cv.filename}</Badge>
-            : <span className="text-xs text-muted-foreground">{ai?.enabled ? 'No CV uploaded' : 'AI off — add API key'}</span>}
+            : <span className="text-xs text-muted-foreground">{ai?.enabled ? 'No CV uploaded' : 'AI off, add API key'}</span>}
           <Button size="sm" variant="outline" className="h-7 rounded-full" disabled={busy} onClick={() => fileRef.current?.click()}>
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
             {hasCV ? 'Replace' : 'Upload CV'}

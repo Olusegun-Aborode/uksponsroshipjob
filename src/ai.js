@@ -45,14 +45,19 @@ const SCHEMA = {
   required: ['headline', 'fit_summary', 'ats_score', 'tailored_cv_markdown', 'cover_note', 'matched_keywords', 'missing_keywords', 'skill_gaps']
 };
 
-const SYSTEM = `You are an elite UK CV writer and career strategist. You specialise in candidates who need a Skilled Worker visa (often switching from a Graduate visa) for data, analytics, BI, engineering, and product roles.
+const SYSTEM = `You are an elite UK CV writer and career strategist for senior data, engineering, and analytics candidates who need Skilled Worker visa sponsorship (often switching from a Graduate visa).
 
-Your tailored CVs make recruiters stop and read. You:
-- Use ONLY the candidate's real experience from their master CV. Never invent employers, job titles, dates, degrees, or certifications. You may rephrase, reorder, re-emphasise, quantify, and surface genuine transferable skills.
-- Mirror the exact terminology and keywords from the job posting WHERE the candidate genuinely has that experience — this is ATS optimisation, not fabrication.
-- Lead with impact and quantified achievements; cut filler. Follow UK conventions (no photo, no date of birth, no "References available", concise, reverse-chronological).
-- Are honest in scoring and gap analysis — a candidate trusts you to tell them the truth about fit.
-- Identify the real gaps between the posting's requirements and the candidate's evidence, and suggest specific, current course topics to close them.
+A recruiter must think "this person clearly knows what they are doing" within five seconds of reading.
+
+NON-NEGOTIABLE RULES:
+- NEVER use em dashes or en dashes (the — or – characters). They read as AI-generated. Use commas, full stops, colons, or parentheses instead, and the word "to" for ranges (e.g. "2023 to present", "£40k to £45k").
+- LEAD WITH RESULTS. Open bullets and the headline with the outcome or a hard number wherever the master CV supports it (impact first, then how). Use the candidate's real figures (volumes processed, value indexed, users, % improvements, publications, audience).
+- SHOW EXPERTISE. Name the candidate's actual tools, chains, protocols, systems, and methods. Be specific and technical. Never generic.
+- BAN filler and clichés: no "results-driven", "team player", "passionate about", "detail-oriented", "proven track record", "go-getter", "synergy", or "leverage" used as fluff.
+- TRUTHFUL. Use only real experience from the master CV. You may reframe, reorder, re-emphasise, surface genuine transferable skills, and mirror the posting's keywords WHERE the candidate genuinely has that experience (ATS optimisation, not fabrication). Never invent employers, titles, dates, metrics, or qualifications.
+- UK conventions: no photo, no date of birth, no "References available", reverse-chronological, concise, British spelling.
+
+Be honest in the ATS score and gap analysis. The candidate trusts you to tell them the truth about fit and exactly what to close.
 
 Return everything via the required structured format.`;
 
@@ -84,6 +89,17 @@ function courseLinks(query) {
   };
 }
 
+// Safety net: strip em/en dashes from generated text (the prompt forbids them, this guarantees it).
+// Ranges become "to"; clause-joining dashes become commas.
+function noDashes(s) {
+  if (typeof s !== 'string') return s;
+  return s
+    .replace(/(\d{4}|present|current)\s*[–—]\s*(\d{4}|present|current)/gi, '$1 to $2')
+    .replace(/(\d)\s*[–—]\s*(\d)/g, '$1 to $2')
+    .replace(/\s*[–—]\s*/g, ', ')
+    .replace(/,\s*,/g, ',');
+}
+
 async function tailorForJob(job, cvText) {
   const res = await getClient().messages.create({
     model: MODEL,
@@ -96,8 +112,17 @@ async function tailorForJob(job, cvText) {
   const block = res.content.find(b => b.type === 'text');
   if (!block) throw new Error('No content returned from the model.');
   const data = JSON.parse(block.text);
+  // Scrub dashes everywhere they could surface.
+  data.headline = noDashes(data.headline);
+  data.fit_summary = noDashes(data.fit_summary);
+  data.tailored_cv_markdown = noDashes(data.tailored_cv_markdown);
+  data.cover_note = noDashes(data.cover_note);
+  data.matched_keywords = (data.matched_keywords || []).map(noDashes);
+  data.missing_keywords = (data.missing_keywords || []).map(noDashes);
   // Turn each gap's course_query into live search links (no hallucinated URLs).
-  data.skill_gaps = (data.skill_gaps || []).map(g => Object.assign({}, g, { courses: courseLinks(g.course_query) }));
+  data.skill_gaps = (data.skill_gaps || []).map(g => Object.assign({}, g, {
+    skill: noDashes(g.skill), why_it_matters: noDashes(g.why_it_matters), courses: courseLinks(g.course_query)
+  }));
   return data;
 }
 

@@ -105,7 +105,7 @@ export default function App() {
                   <Input value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} placeholder="Search title or employer…" className="pl-9" />
                 </div>
                 <FilterSelect value={f.tier} onChange={(v) => setF({ ...f, tier: v })} w="w-[210px]"
-                  opts={[['all', 'All tiers'], ['A', 'A — sponsorship + register'], ['B-', 'B− — claims sponsorship'], ['B', 'B — on register'], ['C', 'C — possible match'], ['unknown', 'Unknown']]} />
+                  opts={[['all', 'All tiers'], ['A', 'A, sponsorship + register'], ['B-', 'B−, claims sponsorship'], ['B', 'B, on register'], ['C', 'C, possible match'], ['unknown', 'Unknown']]} />
                 <FilterSelect value={f.region} onChange={(v) => setF({ ...f, region: v })} w="w-[150px]"
                   opts={[['all', 'All locations'], ...REGIONS.map((r) => [r, r] as [string, string])]} />
                 <FilterSelect value={f.status} onChange={(v) => setF({ ...f, status: v })} w="w-[140px]"
@@ -134,7 +134,7 @@ export default function App() {
               </div>
               {scans.slice(0, 3).map((r) => (
                 <div key={r.id} className="mt-3">
-                  <div className="mb-1 text-xs font-semibold text-primary">{new Date(r.started_at).toLocaleString()} — {r.total_found || 0} found, {r.new_jobs || 0} new</div>
+                  <div className="mb-1 text-xs font-semibold text-primary">{new Date(r.started_at).toLocaleString()}, {r.total_found || 0} found, {r.new_jobs || 0} new</div>
                   {(r.sources || []).map((s, i) => (
                     <div key={i} className="flex justify-between border-b border-dashed py-1 text-xs text-muted-foreground">
                       <span>{s.source}</span>
@@ -148,10 +148,10 @@ export default function App() {
             <Card className="p-4">
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-primary">How priority is decided</h3>
               {[['A', 'success', 'Posting states sponsorship AND on the gov.uk register. Pinned to top.'],
-                ['B−', 'warning', 'Claims sponsorship, employer not yet matched — verify the legal entity.'],
-                ['B', 'info', 'On the register, posting silent — ask the recruiter early.'],
+                ['B−', 'warning', 'Claims sponsorship, employer not yet matched, verify the legal entity.'],
+                ['B', 'info', 'On the register, posting silent, ask the recruiter early.'],
                 ['C', 'muted', 'Possible register match, no signal.'],
-                ['✕', 'destructive', 'Says no sponsorship — kept, ranked out, never deleted.']].map(([b, v, t]) => (
+                ['✕', 'destructive', 'Says no sponsorship, kept, ranked out, never deleted.']].map(([b, v, t]) => (
                 <div key={b} className="mb-2 flex items-baseline gap-2 text-[12.5px] text-muted-foreground">
                   <Badge variant={v as any} className="shrink-0">{b}</Badge><span>{t}</span>
                 </div>
@@ -165,7 +165,7 @@ export default function App() {
             </Card>
 
             <Card className="p-4">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-primary">2026 rules — your numbers</h3>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-primary">2026 rules, your numbers</h3>
               {[['£41,700', 'general threshold (or going rate, higher)'], ['£33,400', 'new-entrant floor / 70% going rate'], ['RQF 6', 'degree-level · B2 English ✓']].map(([a, b]) => (
                 <div key={a} className="border-b border-dashed py-1.5 text-[12.5px] text-muted-foreground"><b className="text-primary">{a}</b> {b}</div>
               ))}
@@ -173,7 +173,7 @@ export default function App() {
                 <a href="https://www.gov.uk/government/publications/register-of-licensed-sponsors-workers" target="_blank" rel="noopener">Register ↗</a>
                 <a href="https://www.gov.uk/government/publications/skilled-worker-visa-going-rates-for-eligible-occupations" target="_blank" rel="noopener">Going rates ↗</a>
               </div>
-              <p className="mt-3 text-[11.5px] italic text-muted-foreground">General information, not immigration advice — verify on gov.uk and with an OISC-regulated adviser.</p>
+              <p className="mt-3 text-[11.5px] italic text-muted-foreground">General information, not immigration advice, verify on gov.uk and with an OISC-regulated adviser.</p>
             </Card>
           </aside>
         </div>

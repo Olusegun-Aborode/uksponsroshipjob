@@ -63,7 +63,7 @@ export function TailorSheet({ job, open, onOpenChange, onGenerated }: {
           {loading && (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-center text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-[hsl(258_90%_66%)]" />
-              <div>{fresh ? <>Tailoring your CV for this role…<br /><span className="text-xs">Claude is rewriting against the job description — ~20s</span></> : 'Loading your tailored CV…'}</div>
+              <div>{fresh ? <>Tailoring your CV for this role…<br /><span className="text-xs">Claude is rewriting against the job description, ~20s</span></> : 'Loading your tailored CV…'}</div>
             </div>
           )}
           {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
@@ -109,13 +109,13 @@ export function TailorSheet({ job, open, onOpenChange, onGenerated }: {
                   <div className="mb-5">
                     <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">✓ You have these</div>
                     <div className="flex flex-wrap gap-2">
-                      {res.matched_keywords.length ? res.matched_keywords.map((k) => <Badge key={k} variant="outline" className="border-success/40 bg-success/10 text-success font-normal">{k}</Badge>) : <span className="text-xs text-muted-foreground">—</span>}
+                      {res.matched_keywords.length ? res.matched_keywords.map((k) => <Badge key={k} variant="outline" className="border-success/40 bg-success/10 text-success font-normal">{k}</Badge>) : <span className="text-xs text-muted-foreground">none</span>}
                     </div>
                   </div>
                   <div>
                     <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">✗ Missing / unproven</div>
                     <div className="flex flex-wrap gap-2">
-                      {res.missing_keywords.length ? res.missing_keywords.map((k) => <Badge key={k} variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive font-normal">{k}</Badge>) : <span className="text-xs text-muted-foreground">none — strong match</span>}
+                      {res.missing_keywords.length ? res.missing_keywords.map((k) => <Badge key={k} variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive font-normal">{k}</Badge>) : <span className="text-xs text-muted-foreground">none, strong match</span>}
                     </div>
                   </div>
                 </TabsContent>
