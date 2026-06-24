@@ -4,36 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sponsorship Job Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="wrap">
-  <header class="head">
-    <div class="title">📋 Sponsorship Job Board
-      <small>Graduate visa → Skilled Worker · UK-wide · ranked by CoS confidence</small>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">SJ</div>
+    <div>
+      <h1>Sponsorship Job Board</h1>
+      <p>Graduate&nbsp;→ Skilled Worker · UK-wide · ranked by CoS confidence</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="cvchip" id="cvChip" title="Your master CV — used to tailor each application">
+      <span id="cvChipLabel">No CV uploaded</span>
+      <button class="btn-ghost sm" id="cvUploadBtn">Upload CV</button>
+      <input type="file" id="cvFile" accept=".pdf,.docx,.txt,.md" hidden>
     </div>
     <div class="countdown" id="countdown"></div>
-  </header>
+  </div>
+</header>
 
+<div class="wrap">
   <section class="stats" id="stats"></section>
 
   <div class="cols">
     <main>
-      <div class="panel">
-        <h3>Scan</h3>
-        <div class="scanbar">
-          <button id="scanBtn">⟳ Scan now</button>
-          <span id="scanInfo" class="note"></span>
-        </div>
-        <div id="scanLog"></div>
-      </div>
-
-      <div class="panel">
+      <div class="panel toolbar-panel">
         <div class="toolbar">
-          <input type="text" id="q" placeholder="Search title or employer…">
+          <div class="search"><svg viewBox="0 0 24 24" class="i"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z"/></svg>
+            <input type="text" id="q" placeholder="Search title or employer…"></div>
           <select id="fTier">
             <option value="all">All tiers</option>
-            <option value="A">A — CoS stated + on register</option>
+            <option value="A">A — sponsorship stated + on register</option>
             <option value="B-">B− — claims sponsorship</option>
             <option value="B">B — on register</option>
             <option value="C">C — possible match</option>
@@ -42,56 +48,61 @@
           <select id="fRegion"><option value="all">All locations</option></select>
           <select id="fStatus">
             <option value="all">Any status</option>
-            <option value="new">New</option>
-            <option value="interested">Interested</option>
-            <option value="applied">Applied</option>
-            <option value="interviewing">Interviewing</option>
-            <option value="offer">Offer</option>
-            <option value="rejected">Rejected</option>
+            <option value="new">New</option><option value="interested">Interested</option>
+            <option value="applied">Applied</option><option value="interviewing">Interviewing</option>
+            <option value="offer">Offer</option><option value="rejected">Rejected</option>
           </select>
           <select id="fSalary">
             <option value="all">Any salary</option>
-            <option value="pass">✓ Clears floor</option>
-            <option value="borderline">◑ Borderline</option>
-            <option value="unknown">? Not disclosed</option>
-            <option value="fail">⚠ Below floor</option>
+            <option value="pass">✓ Clears floor</option><option value="borderline">◑ Borderline</option>
+            <option value="unknown">? Not disclosed</option><option value="fail">⚠ Below floor</option>
           </select>
           <label class="chk"><input type="checkbox" id="hideUnderpaid"> hide underpaid</label>
           <label class="chk"><input type="checkbox" id="hideStale"> hide stale</label>
           <label class="chk"><input type="checkbox" id="showExcluded"> show excluded</label>
         </div>
-        <div id="jobs"></div>
       </div>
+      <div id="jobs" class="joblist"></div>
     </main>
 
     <aside>
       <div class="panel">
+        <div class="scanbar">
+          <button id="scanBtn" class="btn">⟳ Scan now</button>
+          <span id="scanInfo" class="note"></span>
+        </div>
+        <div id="scanLog" class="scanlog"></div>
+      </div>
+
+      <div class="panel">
         <h3>How priority is decided</h3>
-        <div class="legend"><span class="badge A">A</span> Posting states sponsorship <b>and</b> employer is on the gov.uk register. Pinned to top.</div>
-        <div class="legend"><span class="badge bminus">B−</span> Posting claims sponsorship, employer not yet matched — verify the legal entity.</div>
+        <div class="legend"><span class="badge A">A</span> Posting states sponsorship <b>and</b> employer on the gov.uk register. Pinned to top.</div>
+        <div class="legend"><span class="badge bminus">B−</span> Claims sponsorship, employer not yet matched — verify the legal entity.</div>
         <div class="legend"><span class="badge B">B</span> On the register, posting silent — ask the recruiter early.</div>
         <div class="legend"><span class="badge C">C</span> Possible register match, no signal.</div>
-        <div class="legend"><span class="badge excluded">✕</span> Posting says no sponsorship — kept, ranked out, never deleted.</div>
-        <p class="note">Every card shows the reason for its tier. "On the register" means a company <i>can</i> sponsor, not that it will for this role — always confirm before applying.</p>
+        <div class="legend"><span class="badge excluded">✕</span> Says no sponsorship — kept, ranked out, never deleted.</div>
         <div class="reginfo" id="regInfo"></div>
       </div>
 
       <div class="panel">
         <h3>2026 rules — your numbers</h3>
         <div class="rule"><b>£41,700</b> general threshold (or going rate, higher)</div>
-        <div class="rule"><b>£33,400</b> your new-entrant floor / 70% going rate</div>
-        <div class="rule"><b>RQF 6</b> degree-level · <b>B2 English</b> ✓ (UK MSc)</div>
-        <div class="rule"><b>Switch in-country</b> before Graduate visa expires</div>
+        <div class="rule"><b>£33,400</b> new-entrant floor / 70% going rate</div>
+        <div class="rule"><b>RQF 6</b> degree-level · <b>B2 English</b> ✓</div>
         <div class="links">
           <a href="https://www.gov.uk/government/publications/register-of-licensed-sponsors-workers" target="_blank">Register ↗</a>
           <a href="https://www.gov.uk/government/publications/skilled-worker-visa-going-rates-for-eligible-occupations" target="_blank">Going rates ↗</a>
-          <a href="https://www.jobs.nhs.uk/candidate/search" target="_blank">NHS Jobs ↗</a>
         </div>
         <p class="note">General information, not immigration advice — verify on gov.uk and with an OISC-regulated adviser.</p>
       </div>
     </aside>
   </div>
 </div>
+
+<!-- Slide-over drawer for the tailored CV + analysis -->
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
 <script src="app.js"></script>
 </body>
 </html>

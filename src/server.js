@@ -3,12 +3,21 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cron = require('node-cron');
+const multer = require('multer');
 const { db } = require('./db');
 const { runScan } = require('./scan');
+const { saveCV, getCVText, cvStatus } = require('./cv');
+const { tailorForJob, aiEnabled, MODEL } = require('./ai');
 
+const fs = require('fs');
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'public')));
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+
+// Serve the built React (shadcn) frontend from web/dist; fall back to the legacy public/ if not built.
+const WEB_DIST = path.join(__dirname, '..', 'web', 'dist');
+const STATIC_DIR = fs.existsSync(path.join(WEB_DIST, 'index.html')) ? WEB_DIST : path.join(__dirname, '..', 'public');
+app.use(express.static(STATIC_DIR));
 
 // A role not seen across recent scans has likely been delisted from the feeds.
 const STALE_DAYS = Number(process.env.STALE_DAYS) || 21;
@@ -82,6 +91,40 @@ app.post('/api/jobs/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// --- AI / CV: status of the assistant (key present?) and the uploaded master CV ---
+app.get('/api/ai', (req, res) => {
+  res.json({ enabled: aiEnabled(), model: MODEL, cv: cvStatus() });
+});
+
+// --- upload / replace the master CV (PDF, DOCX, TXT, MD) ---
+app.post('/api/cv', upload.single('cv'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  try {
+    const r = await saveCV(req.file.buffer, req.file.originalname);
+    res.json(Object.assign({ ok: true }, r, cvStatus()));
+  } catch (e) { res.status(400).json({ error: String(e.message || e) }); }
+});
+
+// --- generate (or return cached) tailored CV + analysis for one job ---
+app.post('/api/jobs/:id/tailor', async (req, res) => {
+  if (!aiEnabled()) return res.status(400).json({ error: 'AI not configured — add ANTHROPIC_API_KEY to .env.' });
+  const cvText = getCVText();
+  if (!cvText) return res.status(400).json({ error: 'Upload your CV first.' });
+  const job = db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
+  if (!job) return res.status(404).json({ error: 'Job not found.' });
+
+  if (!req.query.force && job.generated_analysis) {
+    return res.json({ cached: true, generated_at: job.generated_at, result: JSON.parse(job.generated_analysis) });
+  }
+  try {
+    const result = await tailorForJob(job, cvText);
+    const now = new Date().toISOString();
+    db.prepare('UPDATE jobs SET generated_cv=?, generated_analysis=?, generated_at=? WHERE id=?')
+      .run(result.tailored_cv_markdown || '', JSON.stringify(result), now, job.id);
+    res.json({ cached: false, generated_at: now, result });
+  } catch (e) { console.error('tailor failed:', e); res.status(500).json({ error: String(e.message || e) }); }
+});
+
 // --- trigger a scan on demand ---
 let scanning = false;
 app.post('/api/scan', async (req, res) => {
@@ -93,8 +136,11 @@ app.post('/api/scan', async (req, res) => {
   finally { scanning = false; }
 });
 
+// SPA fallback — any non-API GET serves the app shell.
+app.get(/^(?!\/api).+/, (req, res) => res.sendFile(path.join(STATIC_DIR, 'index.html')));
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Board running at http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Board running at http://localhost:${PORT} (serving ${STATIC_DIR.endsWith('dist') ? 'web/dist' : 'public'})`));
 
 // Built-in scheduler: every 3 hours while the server is up.
 cron.schedule('0 */3 * * *', async () => {
