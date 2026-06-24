@@ -61,6 +61,11 @@ CREATE TABLE IF NOT EXISTS scan_runs (
   employers_checked INTEGER DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS meta (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
+
 CREATE TABLE IF NOT EXISTS source_results (
   run_id   INTEGER,
   source   TEXT,

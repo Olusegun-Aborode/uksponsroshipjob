@@ -32,6 +32,17 @@ jobs:
           SEARCH_KEYWORDS: ${{ vars.SEARCH_KEYWORDS }}
           SEARCH_LOCATIONS: ${{ vars.SEARCH_LOCATIONS }}
           ATS_BOARDS: ${{ vars.ATS_BOARDS }}
+          # Phone alerts for new Tier A/B roles (add these as repo Secrets to enable).
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          # Optional tuning (repo Variables); code defaults apply if unset.
+          ALERT_TIERS: ${{ vars.ALERT_TIERS }}
+          ALERT_MIN_CONFIDENCE: ${{ vars.ALERT_MIN_CONFIDENCE }}
+          ADZUNA_MAX_PAGES: ${{ vars.ADZUNA_MAX_PAGES }}
+          SALARY_PROFILE: ${{ vars.SALARY_PROFILE }}
+          SALARY_THRESHOLD_GENERAL: ${{ vars.SALARY_THRESHOLD_GENERAL }}
+          SALARY_NEW_ENTRANT: ${{ vars.SALARY_NEW_ENTRANT }}
         run: node src/scan.js
       - name: Commit snapshot
         run: |

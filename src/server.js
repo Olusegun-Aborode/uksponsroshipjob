@@ -10,6 +10,10 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// A role not seen across recent scans has likely been delisted from the feeds.
+const STALE_DAYS = Number(process.env.STALE_DAYS) || 21;
+const daysOld = ts => ts ? Math.floor((Date.now() - Date.parse(ts)) / 86400000) : null;
+
 // --- jobs feed, filterable ---
 app.get('/api/jobs', (req, res) => {
   const { status, tier, region, category, q, includeExcluded, salary, hideUnderpaid } = req.query;
@@ -26,7 +30,25 @@ app.get('/api/jobs', (req, res) => {
   const sql = `SELECT * FROM jobs ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
     ORDER BY CASE tier WHEN 'A' THEN 0 WHEN 'B-' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'unknown' THEN 4 ELSE 5 END,
     confidence DESC, last_seen DESC`;
-  res.json(db.prepare(sql).all(...args));
+  let rows = db.prepare(sql).all(...args).map(j => {
+    const d = daysOld(j.last_seen);
+    return Object.assign(j, { days_old: d, stale: d !== null && d >= STALE_DAYS });
+  });
+  // Hide stale roles unless the user has already engaged with them (status changed from 'new').
+  if (req.query.hideStale) rows = rows.filter(j => !j.stale || j.status !== 'new');
+  res.json(rows);
+});
+
+// --- register freshness: when was the sponsor list last loaded, and how big ---
+app.get('/api/register', (req, res) => {
+  const get = k => { const r = db.prepare('SELECT value FROM meta WHERE key=?').get(k); return r ? r.value : null; };
+  const loaded = get('register_loaded_at');
+  res.json({
+    loaded_at: loaded,
+    days_old: daysOld(loaded),
+    total: Number(get('register_total')) || db.prepare('SELECT COUNT(*) n FROM register').get().n,
+    skilled_worker: Number(get('register_skilled_worker')) || 0
+  });
 });
 
 // --- counts for the stat bar ---

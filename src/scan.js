@@ -21,7 +21,27 @@ function fingerprint(employer, title) {
   return crypto.createHash('sha1').update(norm(employer) + '|' + norm(title)).digest('hex').slice(0, 16);
 }
 
+// On a fresh checkout (e.g. the GitHub Action) the SQLite DB is empty but data/jobs.json carries the
+// last run's roles. Seed their ids so a cloud scan computes "new" against what was already seen —
+// otherwise every job looks new and the alerts spam on every run. User tracking is irrelevant here
+// (the cloud runner doesn't keep it); only "have we seen this id before" matters.
+function seedFromSnapshot() {
+  if (db.prepare('SELECT COUNT(*) n FROM jobs').get().n > 0) return 0;
+  const snap = path.join(__dirname, '..', 'data', 'jobs.json');
+  if (!fs.existsSync(snap)) return 0;
+  let jobs = [];
+  try { jobs = (JSON.parse(fs.readFileSync(snap, 'utf8')).jobs) || []; } catch { return 0; }
+  const ins = db.prepare('INSERT OR IGNORE INTO jobs (id,title,employer,first_seen,last_seen) VALUES (?,?,?,?,?)');
+  const tx = db.transaction(() => {
+    for (const j of jobs) ins.run(j.id, j.title || '', j.employer || '', j.first_seen || '', j.last_seen || '');
+  });
+  tx();
+  return jobs.length;
+}
+
 async function runScan() {
+  const seeded = seedFromSnapshot();
+  if (seeded) console.log(`Seeded ${seeded} known roles from data/jobs.json (cold start).`);
   const started = new Date().toISOString();
   const run = db.prepare('INSERT INTO scan_runs (started_at) VALUES (?)').run(started);
   const runId = run.lastInsertRowid;

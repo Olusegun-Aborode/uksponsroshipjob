@@ -57,6 +57,7 @@
             <option value="fail">⚠ Below floor</option>
           </select>
           <label class="chk"><input type="checkbox" id="hideUnderpaid"> hide underpaid</label>
+          <label class="chk"><input type="checkbox" id="hideStale"> hide stale</label>
           <label class="chk"><input type="checkbox" id="showExcluded"> show excluded</label>
         </div>
         <div id="jobs"></div>
@@ -72,6 +73,7 @@
         <div class="legend"><span class="badge C">C</span> Possible register match, no signal.</div>
         <div class="legend"><span class="badge excluded">✕</span> Posting says no sponsorship — kept, ranked out, never deleted.</div>
         <p class="note">Every card shows the reason for its tier. "On the register" means a company <i>can</i> sponsor, not that it will for this role — always confirm before applying.</p>
+        <div class="reginfo" id="regInfo"></div>
       </div>
 
       <div class="panel">

@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const REGIONS = ['London/SE','Rest of England','Scotland','Wales','Northern Ireland','Remote'];
 const STATUSES = [['new','New'],['interested','Interested'],['applied','Applied'],['interviewing','Interviewing'],['offer','Offer'],['rejected','Rejected'],['not_suitable','Not suitable']];
-let filter = { status:'all', tier:'all', region:'all', salary:'all', q:'', includeExcluded:false, hideUnderpaid:false };
+let filter = { status:'all', tier:'all', region:'all', salary:'all', q:'', includeExcluded:false, hideUnderpaid:false, hideStale:false };
 
 // ---- visa countdown persists in localStorage (a single date, harmless) ----
 function renderCountdown(){
@@ -65,6 +65,7 @@ function jobCard(j){
       ${j.soc_code?`<span class="tag">SOC ${esc(j.soc_code)}</span>`:''}
       ${j.register_name?`<span class="tag reg">register: ${esc(j.register_name)}</span>`:''}
       ${j.fit_score?`<span class="tag fit">fit ${j.fit_score}</span>`:''}
+      ${j.stale?`<span class="tag stale">stale · seen ${j.days_old}d ago</span>`:''}
       <span class="tag">via ${esc(j.source)}</span>
       ${j.date_applied?`<span class="tag">applied ${esc(j.date_applied)}</span>`:''}
     </div>
@@ -113,6 +114,16 @@ async function loadScans(){
   }).join('');
 }
 
+async function loadRegister(){
+  try{
+    const r = await (await fetch('/api/register')).json();
+    if(!r.total){ $('#regInfo').textContent = ''; return; }
+    const when = r.loaded_at ? (r.days_old===0?'today':r.days_old+'d ago') : 'unknown';
+    const warn = (r.days_old!==null && r.days_old>40) ? ' style="color:var(--warn)"' : '';
+    $('#regInfo').innerHTML = `<b>${r.total.toLocaleString()}</b> sponsors · <b>${(r.skilled_worker||0).toLocaleString()}</b> Skilled Worker · loaded <span${warn}>${when}</span>`;
+  }catch(e){ $('#regInfo').textContent = ''; }
+}
+
 function syncControls(){
   $('#fTier').value = filter.tier; $('#fStatus').value = filter.status; $('#fRegion').value = filter.region;
 }
@@ -125,6 +136,7 @@ function init(){
   $('#fRegion').onchange = e => { filter.region = e.target.value; loadJobs(); };
   $('#fSalary').onchange = e => { filter.salary = e.target.value; loadJobs(); };
   $('#hideUnderpaid').onchange = e => { filter.hideUnderpaid = e.target.checked; loadJobs(); };
+  $('#hideStale').onchange = e => { filter.hideStale = e.target.checked; loadJobs(); };
   $('#showExcluded').onchange = e => { filter.includeExcluded = e.target.checked; loadJobs(); };
   $('#scanBtn').onclick = async () => {
     const b = $('#scanBtn'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Scanning…';
@@ -135,7 +147,7 @@ function init(){
       if(runs[0] && runs[0].finished_at){ clearInterval(poll); b.disabled=false; b.textContent='⟳ Scan now'; loadJobs(); loadStats(); }
     }, 2500);
   };
-  renderCountdown(); loadStats(); loadJobs(); loadScans();
+  renderCountdown(); loadStats(); loadJobs(); loadScans(); loadRegister();
   setInterval(loadScans, 60000);
 }
 init();

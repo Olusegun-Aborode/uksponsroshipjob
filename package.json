@@ -6,6 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "test": "node --test",
     "scan": "node src/scan.js",
     "register:update": "node scripts/init-register.js",
     "ats:detect": "node scripts/ats-detect.js",

@@ -75,6 +75,13 @@ async function updateRegister(source = process.env.REGISTER_CSV || 'AUTO') {
   tx();
 
   const skilled = Array.from(map.values()).filter(e => e.sw).length;
+
+  // Record freshness so the dashboard can show how current the register is (sponsors get revoked).
+  const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key,value) VALUES (?,?)');
+  setMeta.run('register_loaded_at', new Date().toISOString());
+  setMeta.run('register_total', String(map.size));
+  setMeta.run('register_skilled_worker', String(skilled));
+
   return { total: map.size, skilledWorker: skilled };
 }
 
