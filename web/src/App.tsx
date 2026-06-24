@@ -13,7 +13,7 @@ import { api, type Job, type Stats, type ScanRun, type RegisterInfo, type AiStat
 
 const REGIONS = ['London/SE', 'Rest of England', 'Scotland', 'Wales', 'Northern Ireland', 'Remote']
 
-type Filters = { status: string; tier: string; region: string; salary: string; q: string; includeExcluded: boolean; hideUnderpaid: boolean; hideStale: boolean }
+type Filters = { status: string; tier: string; region: string; salary: string; q: string; sort: string; includeExcluded: boolean; hideUnderpaid: boolean; hideStale: boolean }
 
 export default function App() {
   const [ai, setAi] = useState<AiStatus | null>(null)
@@ -24,7 +24,7 @@ export default function App() {
   const [scanning, setScanning] = useState(false)
   const [sheetJob, setSheetJob] = useState<Job | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [f, setF] = useState<Filters>({ status: 'all', tier: 'all', region: 'all', salary: 'all', q: '', includeExcluded: false, hideUnderpaid: false, hideStale: false })
+  const [f, setF] = useState<Filters>({ status: 'all', tier: 'all', region: 'all', salary: 'all', q: '', sort: 'match', includeExcluded: false, hideUnderpaid: false, hideStale: false })
 
   const loadAi = useCallback(() => api.ai().then(setAi), [])
   const loadStats = useCallback(() => api.stats().then(setStats), [])
@@ -36,6 +36,7 @@ export default function App() {
     if (f.region !== 'all') p.region = f.region
     if (f.salary !== 'all') p.salary = f.salary
     if (f.q) p.q = f.q
+    if (f.sort) p.sort = f.sort
     if (f.includeExcluded) p.includeExcluded = '1'
     if (f.hideUnderpaid) p.hideUnderpaid = '1'
     if (f.hideStale) p.hideStale = '1'
@@ -112,6 +113,8 @@ export default function App() {
                   opts={[['all', 'Any status'], ['new', 'New'], ['interested', 'Interested'], ['applied', 'Applied'], ['interviewing', 'Interviewing'], ['offer', 'Offer'], ['rejected', 'Rejected']]} />
                 <FilterSelect value={f.salary} onChange={(v) => setF({ ...f, salary: v })} w="w-[150px]"
                   opts={[['all', 'Any salary'], ['pass', '✓ Clears floor'], ['borderline', '◑ Borderline'], ['unknown', '? Not disclosed'], ['fail', '⚠ Below floor']]} />
+                <FilterSelect value={f.sort} onChange={(v) => setF({ ...f, sort: v })} w="w-[160px]"
+                  opts={[['match', 'Sort: best match'], ['tier', 'Sort: sponsorship']]} />
                 <Toggle label="hide underpaid" checked={f.hideUnderpaid} onChange={(v) => setF({ ...f, hideUnderpaid: v })} />
                 <Toggle label="hide stale" checked={f.hideStale} onChange={(v) => setF({ ...f, hideStale: v })} />
                 <Toggle label="show excluded" checked={f.includeExcluded} onChange={(v) => setF({ ...f, includeExcluded: v })} />

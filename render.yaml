@@ -1,0 +1,34 @@
+# One-click-ish deploy to Render. Connect this repo in the Render dashboard, then set the secret
+# env vars (ADZUNA_*, ANTHROPIC_API_KEY, TELEGRAM_*, APP_PASSWORD) under the service's Environment.
+# The persistent disk keeps data/ (SQLite DB, register, backups) across deploys and restarts.
+services:
+  - type: web
+    name: sponsorship-job-board
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/ai
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: SEARCH_KEYWORDS
+        sync: false
+      - key: ATS_BOARDS
+        sync: false
+      - key: ADZUNA_APP_ID
+        sync: false
+      - key: ADZUNA_APP_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: AI_MONTHLY_BUDGET_USD
+        sync: false
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1

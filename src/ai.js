@@ -3,17 +3,38 @@
 // a recruiter-stopping headline, an honest ATS match score, matched/missing keywords, a short cover
 // note, and the real skill gaps — each with a course topic we turn into live search links.
 const Anthropic = require('@anthropic-ai/sdk');
+const { db } = require('./db');
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-8';
+// Opus 4.8 pricing per 1M tokens (USD). Override if you switch models.
+const PRICE_IN = 5, PRICE_OUT = 25;
 
 let client = null;
 function getClient() {
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error('ANTHROPIC_API_KEY not set — add it to .env to enable CV generation.');
+  if (!key) throw new Error('ANTHROPIC_API_KEY not set, add it to .env to enable CV generation.');
   if (!client) client = new Anthropic({ apiKey: key });
   return client;
 }
 function aiEnabled() { return !!process.env.ANTHROPIC_API_KEY; }
+
+// --- spend tracking + monthly budget cap (per calendar month) ---
+const getMeta = db.prepare('SELECT value FROM meta WHERE key=?');
+const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key,value) VALUES (?,?)');
+const monthKey = () => 'ai_spend_' + new Date().toISOString().slice(0, 7); // ai_spend_YYYY-MM
+
+function monthSpend() { const r = getMeta.get(monthKey()); return r ? Number(r.value) : 0; }
+function budget() { return Number(process.env.AI_MONTHLY_BUDGET_USD) || 0; } // 0 = no cap
+function spendStatus() { const b = budget(); return { month: new Date().toISOString().slice(0, 7), spent_usd: Math.round(monthSpend() * 100) / 100, budget_usd: b, remaining_usd: b ? Math.round((b - monthSpend()) * 100) / 100 : null }; }
+function assertBudget() {
+  const b = budget();
+  if (b && monthSpend() >= b) throw new Error(`Monthly AI budget of $${b} reached (spent $${monthSpend().toFixed(2)}). Raise AI_MONTHLY_BUDGET_USD or wait for next month.`);
+}
+function recordSpend(usage) {
+  if (!usage) return;
+  const cost = ((usage.input_tokens || 0) * PRICE_IN + (usage.output_tokens || 0) * PRICE_OUT) / 1e6;
+  setMeta.run(monthKey(), String(monthSpend() + cost));
+}
 
 // Structured-output schema. (No min/max/length constraints — unsupported by structured outputs.)
 const SCHEMA = {
@@ -101,6 +122,7 @@ function noDashes(s) {
 }
 
 async function tailorForJob(job, cvText) {
+  assertBudget();
   const res = await getClient().messages.create({
     model: MODEL,
     max_tokens: 16000,
@@ -109,6 +131,7 @@ async function tailorForJob(job, cvText) {
     system: SYSTEM,
     messages: [{ role: 'user', content: buildUserPrompt(job, cvText) }]
   });
+  recordSpend(res.usage);
   const block = res.content.find(b => b.type === 'text');
   if (!block) throw new Error('No content returned from the model.');
   const data = JSON.parse(block.text);
@@ -126,4 +149,40 @@ async function tailorForJob(job, cvText) {
   return data;
 }
 
-module.exports = { tailorForJob, aiEnabled, MODEL };
+// --- interview prep + company brief ---
+const PREP_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  properties: {
+    company_brief: { type: 'string', description: 'A sharp 3 to 4 sentence brief on the employer: what they do, business model, and anything notable. If unknown from the posting, say what can be inferred and flag what to research.' },
+    why_you_fit: { type: 'string', description: 'Two sentences on why this candidate is a credible fit for THIS role, grounded in their real experience.' },
+    likely_questions: { type: 'array', description: 'The most likely interview questions for this specific role.', items: { type: 'object', additionalProperties: false, properties: { question: { type: 'string' }, how_to_answer: { type: 'string', description: 'A concrete angle using the candidate\'s real experience, with a metric or example where possible.' } }, required: ['question', 'how_to_answer'] } },
+    talking_points: { type: 'array', items: { type: 'string' }, description: 'Punchy, quantified achievements from the CV to land during the interview.' },
+    questions_to_ask: { type: 'array', items: { type: 'string' }, description: 'Smart questions for the candidate to ask the interviewer.' },
+    sponsorship_tip: { type: 'string', description: 'One tactful tip on raising visa sponsorship at the right moment for this employer.' }
+  },
+  required: ['company_brief', 'why_you_fit', 'likely_questions', 'talking_points', 'questions_to_ask', 'sponsorship_tip']
+};
+const PREP_SYSTEM = `You are an interview coach for a versatile UK technology candidate who needs Skilled Worker sponsorship. Be specific, practical, and grounded in the candidate's real CV. Lead with results. Never use em dashes or en dashes (use commas, full stops, colons). No generic filler.`;
+
+async function interviewPrep(job, cvText) {
+  assertBudget();
+  const res = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 8000,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'medium', format: { type: 'json_schema', schema: PREP_SCHEMA } },
+    system: PREP_SYSTEM,
+    messages: [{ role: 'user', content: buildUserPrompt(job, cvText) }]
+  });
+  recordSpend(res.usage);
+  const block = res.content.find(b => b.type === 'text');
+  if (!block) throw new Error('No content returned from the model.');
+  const d = JSON.parse(block.text);
+  d.company_brief = noDashes(d.company_brief); d.why_you_fit = noDashes(d.why_you_fit); d.sponsorship_tip = noDashes(d.sponsorship_tip);
+  d.talking_points = (d.talking_points || []).map(noDashes);
+  d.questions_to_ask = (d.questions_to_ask || []).map(noDashes);
+  d.likely_questions = (d.likely_questions || []).map(q => ({ question: noDashes(q.question), how_to_answer: noDashes(q.how_to_answer) }));
+  return d;
+}
+
+module.exports = { tailorForJob, interviewPrep, aiEnabled, spendStatus, MODEL };

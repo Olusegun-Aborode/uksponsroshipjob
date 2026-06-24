@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { toast } from 'sonner'
-import { Loader2, Copy, RotateCw } from 'lucide-react'
+import { Loader2, Copy, RotateCw, FileDown } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { api, type Job, type TailorResult } from '@/lib/api'
+import { api, type Job, type TailorResult, type InterviewPrep } from '@/lib/api'
 
 const mdComponents = {
   h1: (p: any) => <h1 className="font-serif text-xl font-semibold mb-1" {...p} />,
@@ -29,16 +29,30 @@ export function TailorSheet({ job, open, onOpenChange, onGenerated }: {
   const [res, setRes] = useState<TailorResult | null>(null)
   const [error, setError] = useState('')
   const [fresh, setFresh] = useState(false)
+  const [tab, setTab] = useState('cv')
+  const [prep, setPrep] = useState<InterviewPrep | null>(null)
+  const [prepLoading, setPrepLoading] = useState(false)
+  const [prepError, setPrepError] = useState('')
 
   useEffect(() => {
     if (!open || !job) return
     setRes(null); setError(''); setFresh(!job.generated_at); setLoading(true)
+    setTab('cv'); setPrep(null); setPrepError('')
     api.tailor(job.id).then((r) => {
       if (r.error) setError(r.error)
       else { setRes(r.result); onGenerated(job.id, r.generated_at) }
     }).catch((e) => setError(String(e?.message || e))).finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, job?.id])
+
+  function onTab(v: string) {
+    setTab(v)
+    if (v === 'prep' && job && !prep && !prepLoading) {
+      setPrepLoading(true); setPrepError('')
+      api.prep(job.id).then((r) => { if (r.error) setPrepError(r.error); else setPrep(r.result) })
+        .catch((e) => setPrepError(String(e?.message || e))).finally(() => setPrepLoading(false))
+    }
+  }
 
   async function regen() {
     if (!job) return
@@ -82,17 +96,19 @@ export function TailorSheet({ job, open, onOpenChange, onGenerated }: {
                 </div>
               </div>
 
-              <Tabs defaultValue="cv">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="cv">Tailored CV</TabsTrigger>
-                  <TabsTrigger value="cover">Cover note</TabsTrigger>
+              <Tabs value={tab} onValueChange={onTab}>
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="cv">CV</TabsTrigger>
+                  <TabsTrigger value="cover">Cover</TabsTrigger>
                   <TabsTrigger value="kw">Keywords</TabsTrigger>
                   <TabsTrigger value="gaps">Courses</TabsTrigger>
+                  <TabsTrigger value="prep">Interview</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="cv">
                   <div className="mb-3 flex justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={() => copy(res.tailored_cv_markdown, 'CV copied')}><Copy className="h-3.5 w-3.5" />Copy CV</Button>
+                    <Button asChild size="sm"><a href={api.docxUrl(job?.id || '')} download><FileDown className="h-3.5 w-3.5" />Download .docx</a></Button>
+                    <Button size="sm" variant="outline" onClick={() => copy(res.tailored_cv_markdown, 'CV copied')}><Copy className="h-3.5 w-3.5" />Copy</Button>
                     <Button size="sm" variant="outline" onClick={regen}><RotateCw className="h-3.5 w-3.5" />Regenerate</Button>
                   </div>
                   <div className="rounded-xl border bg-card p-5">
@@ -132,6 +148,41 @@ export function TailorSheet({ job, open, onOpenChange, onGenerated }: {
                       </div>
                     </div>
                   )) : <p className="text-sm text-muted-foreground">No major gaps flagged.</p>}
+                </TabsContent>
+
+                <TabsContent value="prep">
+                  {prepLoading && <div className="flex h-40 flex-col items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin text-[hsl(258_90%_66%)]" /><span className="text-xs">Preparing interview brief…</span></div>}
+                  {prepError && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{prepError}</div>}
+                  {prep && !prepLoading && (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border bg-card p-4">
+                        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Company brief</div>
+                        <p className="text-[13px] text-muted-foreground">{prep.company_brief}</p>
+                        <p className="mt-2 text-[13px]"><span className="font-medium text-foreground">Why you fit: </span><span className="text-muted-foreground">{prep.why_you_fit}</span></p>
+                      </div>
+                      <div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Likely questions</div>
+                        {prep.likely_questions.map((q, i) => (
+                          <div key={i} className="mb-2.5 rounded-xl border bg-card p-3.5">
+                            <div className="text-[13.5px] font-medium">{q.question}</div>
+                            <p className="mt-1 text-[12.5px] text-muted-foreground">{q.how_to_answer}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-xl border bg-card p-4">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Talking points to land</div>
+                        <ul className="list-disc space-y-1 pl-5 text-[12.5px] text-muted-foreground">{prep.talking_points.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                      <div className="rounded-xl border bg-card p-4">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Questions to ask them</div>
+                        <ul className="list-disc space-y-1 pl-5 text-[12.5px] text-muted-foreground">{prep.questions_to_ask.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+                        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Sponsorship tip</div>
+                        <p className="text-[12.5px] text-muted-foreground">{prep.sponsorship_tip}</p>
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </>

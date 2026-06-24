@@ -44,6 +44,12 @@ export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) 
           </Button>
           <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" hidden onChange={upload} />
         </div>
+        {ai?.spend && ai.spend.budget_usd > 0 && (
+          <div className="rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground" title="AI spend this month">
+            AI: <span className="font-medium text-foreground">${ai.spend.spent_usd.toFixed(2)}</span>
+            <span className="text-muted-foreground"> / ${ai.spend.budget_usd}</span>
+          </div>
+        )}
         <Countdown />
       </div>
     </header>

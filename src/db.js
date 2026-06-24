@@ -85,7 +85,8 @@ const have = new Set(db.prepare("PRAGMA table_info(jobs)").all().map(c => c.name
 for (const [col, ddl] of [
   ['salary_min', 'INTEGER DEFAULT 0'], ['salary_max', 'INTEGER DEFAULT 0'],
   ['salary_status', 'TEXT'], ['soc_code', 'TEXT'], ['soc_title', 'TEXT'], ['fingerprint', 'TEXT'],
-  ['generated_cv', 'TEXT'], ['generated_analysis', 'TEXT'], ['generated_at', 'TEXT']
+  ['generated_cv', 'TEXT'], ['generated_analysis', 'TEXT'], ['generated_at', 'TEXT'],
+  ['prep_json', 'TEXT'], ['prep_at', 'TEXT']
 ]) {
   if (!have.has(col)) db.exec(`ALTER TABLE jobs ADD COLUMN ${col} ${ddl}`);
 }

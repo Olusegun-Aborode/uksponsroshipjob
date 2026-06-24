@@ -21,10 +21,16 @@ export type Job = {
   status: string
   user_notes: string
   date_applied: string
+  deadline: string
   user_verified: number
   days_old: number | null
   stale: boolean
   generated_at: string | null
+  prep_at: string | null
+  match_score: number
+  deadline_days: number | null
+  deadline_soon: boolean
+  needs_followup: boolean
 }
 
 export type Stats = {
@@ -45,7 +51,14 @@ export type ScanRun = {
 }
 
 export type RegisterInfo = { loaded_at: string | null; days_old: number | null; total: number; skilled_worker: number }
-export type AiStatus = { enabled: boolean; model: string; cv: { uploaded: boolean; filename: string | null; chars: number; uploaded_at: string | null } }
+export type Spend = { month: string; spent_usd: number; budget_usd: number; remaining_usd: number | null }
+export type AiStatus = { enabled: boolean; model: string; cv: { uploaded: boolean; filename: string | null; chars: number; uploaded_at: string | null }; spend?: Spend }
+
+export type PrepQuestion = { question: string; how_to_answer: string }
+export type InterviewPrep = {
+  company_brief: string; why_you_fit: string; sponsorship_tip: string
+  likely_questions: PrepQuestion[]; talking_points: string[]; questions_to_ask: string[]
+}
 
 export type SkillGap = { skill: string; why_it_matters: string; course_query: string; courses: { coursera: string; udemy: string; linkedin: string } }
 export type TailorResult = {
@@ -73,4 +86,7 @@ export const api = {
   uploadCV: (file: File) => { const fd = new FormData(); fd.append('cv', file); return fetch('/api/cv', { method: 'POST', body: fd }).then(j) },
   tailor: (id: string, force = false) =>
     fetch(`/api/jobs/${id}/tailor${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; generated_at: string; result: TailorResult; error?: string }>,
+  prep: (id: string, force = false) =>
+    fetch(`/api/jobs/${id}/prep${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; prep_at: string; result: InterviewPrep; error?: string }>,
+  docxUrl: (id: string) => `/api/jobs/${id}/cv.docx`,
 }

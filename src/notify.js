@@ -62,4 +62,12 @@ async function notifyNewJobs(jobs) {
   return worthy.length;
 }
 
-module.exports = { notifyNewJobs, isAlertWorthy };
+// Generic sender for any message (used by reminders).
+async function send(text) {
+  if (!text) return false;
+  console.log('\n' + text + '\n');
+  const r = await Promise.all([sendTelegram(text), sendWebhook(text)]);
+  return r.some(Boolean);
+}
+
+module.exports = { notifyNewJobs, isAlertWorthy, send };

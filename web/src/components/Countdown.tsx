@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 
 export function Countdown() {
-  const [expiry, setExpiry] = useState(() => localStorage.getItem('visaExpiry') || '')
+  const [expiry, setExpiry] = useState(() => localStorage.getItem('visaExpiry') || '2027-01-07')
   useEffect(() => { if (expiry) localStorage.setItem('visaExpiry', expiry) }, [expiry])
 
   const days = expiry ? Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000) : null

@@ -21,6 +21,7 @@ export function JobCard({ job, aiEnabled, onTailor }: { job: Job; aiEnabled: boo
   const [status, setStatus] = useState(job.status)
   const [notes, setNotes] = useState(job.user_notes || '')
   const [verified, setVerified] = useState(!!job.user_verified)
+  const [deadline, setDeadline] = useState(job.deadline || '')
   const sal = job.salary_status ? SAL[job.salary_status] : null
 
   const tag = (txt: string, cls = '') => (
@@ -61,6 +62,8 @@ export function JobCard({ job, aiEnabled, onTailor }: { job: Job; aiEnabled: boo
           {job.register_name && tag(`register: ${job.register_name}`, 'text-[hsl(212_90%_70%)]')}
           {job.fit_score ? tag(`fit ${job.fit_score}`, 'text-primary') : null}
           {job.stale && tag(`stale · ${job.days_old}d`, 'text-destructive border-destructive/30')}
+          {job.deadline_soon && tag(`closes in ${job.deadline_days}d`, 'text-warning border-warning/40')}
+          {job.needs_followup && tag('follow up', 'text-[hsl(258_90%_72%)] border-[hsl(258_90%_66%)]/40')}
           {tag(`via ${job.source}`)}
         </div>
 
@@ -72,6 +75,11 @@ export function JobCard({ job, aiEnabled, onTailor }: { job: Job; aiEnabled: boo
           <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
             <Checkbox checked={verified} onCheckedChange={(c) => { setVerified(!!c); api.updateJob(job.id, { user_verified: !!c }) }} />
             verified on register
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            deadline
+            <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} onBlur={() => api.updateJob(job.id, { deadline })}
+              className="rounded-md border bg-background px-2 py-1 text-xs text-foreground" />
           </label>
         </div>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={() => api.updateJob(job.id, { user_notes: notes })}
