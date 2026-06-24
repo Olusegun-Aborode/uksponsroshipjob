@@ -6,7 +6,7 @@ services:
     name: sponsorship-job-board
     runtime: docker
     plan: starter
-    healthCheckPath: /api/ai
+    healthCheckPath: /api/health
     envVars:
       - key: PORT
         value: 3000

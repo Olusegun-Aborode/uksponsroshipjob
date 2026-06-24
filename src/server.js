@@ -6,6 +6,7 @@ const cron = require('node-cron');
 const multer = require('multer');
 const { db } = require('./db');
 const { runScan } = require('./scan');
+const { updateRegister } = require('./register');
 const { saveCV, getCVText, cvStatus } = require('./cv');
 const { tailorForJob, interviewPrep, aiEnabled, spendStatus, MODEL } = require('./ai');
 const { cvDocx } = require('./docx');
@@ -16,6 +17,9 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+
+// Public health check (must be reachable without auth so the host's health probe doesn't 401).
+app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // Optional password gate (set APP_PASSWORD before deploying publicly, so nobody else can burn your
 // Claude credits or read your CV). Unset = open, which is fine for local use. HTTP Basic; any username.
@@ -202,6 +206,22 @@ app.get(/^(?!\/api).+/, (req, res) => res.sendFile(path.join(STATIC_DIR, 'index.
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Board running at http://localhost:${PORT} (serving ${STATIC_DIR.endsWith('dist') ? 'web/dist' : 'public'})`));
+
+// First-boot bootstrap (fresh persistent disk): load the sponsor register, then run one scan so the
+// board is usable immediately instead of waiting for the first 3-hourly cron.
+(async () => {
+  try {
+    if (db.prepare('SELECT COUNT(*) n FROM register').get().n === 0) {
+      console.log('First boot: loading sponsor register…');
+      await updateRegister();
+    }
+    if (db.prepare('SELECT COUNT(*) n FROM jobs').get().n === 0 && !scanning) {
+      console.log('First boot: running initial scan…');
+      scanning = true;
+      runScan().then(r => console.log('Initial scan:', r)).catch(e => console.error('Initial scan failed:', e)).finally(() => { scanning = false; });
+    }
+  } catch (e) { console.error('Bootstrap failed:', e.message); }
+})();
 
 // Built-in scheduler: every 3 hours while the server is up.
 cron.schedule('0 */3 * * *', async () => {
