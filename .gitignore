@@ -1,0 +1,8 @@
+node_modules/
+.env
+data/db.sqlite
+data/db.sqlite-shm
+data/db.sqlite-wal
+data/register.csv
+*.log
+.DS_Store

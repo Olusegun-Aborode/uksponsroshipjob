@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sponsorship Job Board</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div class="title">📋 Sponsorship Job Board
+      <small>Graduate visa → Skilled Worker · UK-wide · ranked by CoS confidence</small>
+    </div>
+    <div class="countdown" id="countdown"></div>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <div class="cols">
+    <main>
+      <div class="panel">
+        <h3>Scan</h3>
+        <div class="scanbar">
+          <button id="scanBtn">⟳ Scan now</button>
+          <span id="scanInfo" class="note"></span>
+        </div>
+        <div id="scanLog"></div>
+      </div>
+
+      <div class="panel">
+        <div class="toolbar">
+          <input type="text" id="q" placeholder="Search title or employer…">
+          <select id="fTier">
+            <option value="all">All tiers</option>
+            <option value="A">A — CoS stated + on register</option>
+            <option value="B-">B− — claims sponsorship</option>
+            <option value="B">B — on register</option>
+            <option value="C">C — possible match</option>
+            <option value="unknown">Unknown</option>
+          </select>
+          <select id="fRegion"><option value="all">All locations</option></select>
+          <select id="fStatus">
+            <option value="all">Any status</option>
+            <option value="new">New</option>
+            <option value="interested">Interested</option>
+            <option value="applied">Applied</option>
+            <option value="interviewing">Interviewing</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select id="fSalary">
+            <option value="all">Any salary</option>
+            <option value="pass">✓ Clears floor</option>
+            <option value="borderline">◑ Borderline</option>
+            <option value="unknown">? Not disclosed</option>
+            <option value="fail">⚠ Below floor</option>
+          </select>
+          <label class="chk"><input type="checkbox" id="hideUnderpaid"> hide underpaid</label>
+          <label class="chk"><input type="checkbox" id="showExcluded"> show excluded</label>
+        </div>
+        <div id="jobs"></div>
+      </div>
+    </main>
+
+    <aside>
+      <div class="panel">
+        <h3>How priority is decided</h3>
+        <div class="legend"><span class="badge A">A</span> Posting states sponsorship <b>and</b> employer is on the gov.uk register. Pinned to top.</div>
+        <div class="legend"><span class="badge bminus">B−</span> Posting claims sponsorship, employer not yet matched — verify the legal entity.</div>
+        <div class="legend"><span class="badge B">B</span> On the register, posting silent — ask the recruiter early.</div>
+        <div class="legend"><span class="badge C">C</span> Possible register match, no signal.</div>
+        <div class="legend"><span class="badge excluded">✕</span> Posting says no sponsorship — kept, ranked out, never deleted.</div>
+        <p class="note">Every card shows the reason for its tier. "On the register" means a company <i>can</i> sponsor, not that it will for this role — always confirm before applying.</p>
+      </div>
+
+      <div class="panel">
+        <h3>2026 rules — your numbers</h3>
+        <div class="rule"><b>£41,700</b> general threshold (or going rate, higher)</div>
+        <div class="rule"><b>£33,400</b> your new-entrant floor / 70% going rate</div>
+        <div class="rule"><b>RQF 6</b> degree-level · <b>B2 English</b> ✓ (UK MSc)</div>
+        <div class="rule"><b>Switch in-country</b> before Graduate visa expires</div>
+        <div class="links">
+          <a href="https://www.gov.uk/government/publications/register-of-licensed-sponsors-workers" target="_blank">Register ↗</a>
+          <a href="https://www.gov.uk/government/publications/skilled-worker-visa-going-rates-for-eligible-occupations" target="_blank">Going rates ↗</a>
+          <a href="https://www.jobs.nhs.uk/candidate/search" target="_blank">NHS Jobs ↗</a>
+        </div>
+        <p class="note">General information, not immigration advice — verify on gov.uk and with an OISC-regulated adviser.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

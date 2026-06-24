@@ -1,0 +1,42 @@
+name: scan
+
+# Runs the job scan in the cloud every 3 hours so it keeps working with your laptop off.
+# It commits data/jobs.json (a clean, diffable snapshot). Your application tracking lives
+# in your local DB and is never touched by this.
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch: {}   # lets you run it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Load sponsor register
+        run: node scripts/init-register.js
+        continue-on-error: true   # don't fail the whole run if gov.uk page layout shifts
+      - name: Run scan
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          SEARCH_KEYWORDS: ${{ vars.SEARCH_KEYWORDS }}
+          SEARCH_LOCATIONS: ${{ vars.SEARCH_LOCATIONS }}
+          ATS_BOARDS: ${{ vars.ATS_BOARDS }}
+        run: node src/scan.js
+      - name: Commit snapshot
+        run: |
+          git config user.name "job-scan-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/jobs.json
+          git diff --staged --quiet || git commit -m "scan: update jobs snapshot [skip ci]"
+          git push

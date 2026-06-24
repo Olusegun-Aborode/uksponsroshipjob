@@ -1,0 +1,22 @@
+{
+  "name": "sponsorship-job-board",
+  "version": "1.0.0",
+  "description": "Live UK Skilled Worker sponsorship job board: scans legitimate job feeds, cross-references the gov.uk Register of Licensed Sponsors, scores sponsorship confidence, and tracks applications.",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "scan": "node src/scan.js",
+    "register:update": "node scripts/init-register.js",
+    "ats:detect": "node scripts/ats-detect.js",
+    "init": "node scripts/init-register.js && node src/scan.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3"
+  }
+}

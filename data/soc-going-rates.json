@@ -1,0 +1,15 @@
+{
+  "_note": "Skilled Worker salary gate. 'going_rate_annual' is the per-occupation going rate (SOC 2020) used by UKVI; the salary you must beat is max(general_threshold, going_rate). These figures are ESTIMATES seeded for the data/analytics/product/eng cluster and CHANGE when gov.uk updates its going-rates table — verify the current numbers and your exact SOC code on gov.uk before relying on a pass/fail. General information, not immigration advice.",
+  "_source": "https://www.gov.uk/government/publications/skilled-worker-visa-going-rates-for-eligible-occupations",
+  "_verified": "estimate — unverified for current year",
+  "general_threshold": 41700,
+  "occupations": [
+    { "soc": "2433", "title": "Data analysts & actuaries/statisticians", "keywords": ["data analyst", "analytics", "business intelligence", "bi analyst", "insight analyst", "statistician", "reporting analyst"], "going_rate_annual": 38700 },
+    { "soc": "2134", "title": "Programmers & software development professionals", "keywords": ["software engineer", "software developer", "backend", "frontend", "full stack", "developer", "devops", "platform engineer"], "going_rate_annual": 49400 },
+    { "soc": "2133", "title": "IT business analysts, architects & systems designers", "keywords": ["data engineer", "analytics engineer", "data architect", "etl", "pipeline", "systems analyst", "solutions architect"], "going_rate_annual": 49400 },
+    { "soc": "2135", "title": "IT project & programme managers", "keywords": ["delivery manager", "programme manager", "project manager", "scrum master", "agile delivery"], "going_rate_annual": 47500 },
+    { "soc": "2429", "title": "Management consultants & business analysts n.e.c.", "keywords": ["product manager", "product owner", "business analyst", "strategy", "operations manager"], "going_rate_annual": 41700 },
+    { "soc": "3543", "title": "Marketing associate professionals", "keywords": ["crm manager", "lifecycle", "marketing analytics", "growth manager", "marketing manager", "campaign"], "going_rate_annual": 35300 },
+    { "soc": "2425", "title": "Actuaries, economists & statisticians", "keywords": ["data scientist", "machine learning", "ml engineer", "quantitative", "economist"], "going_rate_annual": 44700 }
+  ]
+}
