@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
+    "@aws-sdk/client-s3": "^3.1075.0",
     "better-sqlite3": "^11.8.1",
     "csv-parse": "^5.6.0",
     "docx": "^9.7.1",

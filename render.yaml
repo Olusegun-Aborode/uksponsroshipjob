@@ -18,8 +18,20 @@ services:
         sync: false
       - key: ADZUNA_APP_KEY
         sync: false
+      - key: REED_API_KEY
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_ENDPOINT
+        sync: false
+      - key: BACKUP_S3_ACCESS_KEY_ID
+        sync: false
+      - key: BACKUP_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: BACKUP_S3_REGION
+        value: auto
       - key: APP_PASSWORD
         sync: false
       - key: TELEGRAM_BOT_TOKEN
