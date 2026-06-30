@@ -20,8 +20,12 @@ function fingerprint(institution, title) {
 // Research-flavoured Adzuna queries (role x topic), tuned to the user's clusters.
 const DEFAULT_QUERIES = [
   'phd studentship', 'funded phd', 'postdoctoral researcher', 'research fellow', 'research associate',
-  'doctoral researcher', 'phd data science', 'phd machine learning', 'phd public health',
-  'phd nutrition', 'research fellow health data', 'phd fintech'
+  'doctoral researcher',
+  // his cluster (data / tech)
+  'phd data science', 'phd machine learning', 'research fellow health data',
+  // her cluster (nutrition / dietetics / public health) — the majority of research is for her
+  'phd nutrition', 'phd dietetics', 'phd public health', 'phd epidemiology', 'phd food science',
+  'postdoctoral public health', 'research fellow nutrition', 'research associate public health'
 ];
 
 async function runResearchScan() {

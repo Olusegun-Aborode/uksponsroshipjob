@@ -52,7 +52,8 @@ export type ScanRun = {
 
 export type RegisterInfo = { loaded_at: string | null; days_old: number | null; total: number; skilled_worker: number }
 export type Spend = { month: string; spent_usd: number; budget_usd: number; remaining_usd: number | null }
-export type AiStatus = { enabled: boolean; model: string; cv: { uploaded: boolean; filename: string | null; chars: number; uploaded_at: string | null }; spend?: Spend }
+export type CvProfile = { uploaded: boolean; filename: string | null; chars: number; uploaded_at: string | null }
+export type AiStatus = { enabled: boolean; model: string; cv: CvProfile & { profiles?: { self: CvProfile; partner: CvProfile } }; spend?: Spend }
 
 export type PrepQuestion = { question: string; how_to_answer: string }
 export type InterviewPrep = {
@@ -92,17 +93,27 @@ export type Opportunity = {
   confidence: number
   reason: string
   fit_score: number
+  for_applicant: string
+  scholarship_type: string | null
+  contact_email: string | null
   status: string
   user_notes: string
   date_applied: string
   deadline_user: string
   user_flagged: number
   pack_at: string | null
+  dossier_at: string | null
   match_score: number
   deadline_days: number | null
   deadline_soon: boolean
   needs_followup: boolean
   has_pack: boolean
+  has_dossier: boolean
+}
+export type Dossier = {
+  school: string; department: string; scholarship_type: string; supervisor: string; contact_email: string
+  fully_funded: boolean; covers_international_fees: boolean; stipend: string; funding_details: string
+  deadline: string; how_to_apply: string[]; eligibility_note: string; legitimacy_note: string; sources: string[]
 }
 export type ResearchStats = { total: number; byTier: Record<string, number>; byType: Record<string, number>; byStatus: Record<string, number> }
 export type ApplicationPack = {
@@ -121,7 +132,7 @@ export const api = {
   updateJob: (id: string, body: Record<string, unknown>) =>
     fetch('/api/jobs/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
   scan: () => fetch('/api/scan', { method: 'POST' }).then(j),
-  uploadCV: (file: File) => { const fd = new FormData(); fd.append('cv', file); return fetch('/api/cv', { method: 'POST', body: fd }).then(j) },
+  uploadCV: (file: File, profile: 'self' | 'partner' = 'self') => { const fd = new FormData(); fd.append('cv', file); return fetch('/api/cv?profile=' + profile, { method: 'POST', body: fd }).then(j) },
   tailor: (id: string, force = false) =>
     fetch(`/api/jobs/${id}/tailor${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; generated_at: string; result: TailorResult; error?: string }>,
   prep: (id: string, force = false) =>
@@ -135,7 +146,13 @@ export const api = {
   researchScan: () => fetch('/api/research/scan', { method: 'POST' }).then(j),
   updateOpp: (id: string, body: Record<string, unknown>) =>
     fetch('/api/opportunities/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
-  pack: (id: string, force = false) =>
-    fetch(`/api/opportunities/${id}/pack${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; pack_at: string; result: ApplicationPack; error?: string }>,
+  pack: (id: string, opts: { force?: boolean; applicant?: 'self' | 'partner' } = {}) => {
+    const q = new URLSearchParams()
+    if (opts.force) q.set('force', '1')
+    if (opts.applicant) q.set('applicant', opts.applicant)
+    return fetch(`/api/opportunities/${id}/pack?${q}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; pack_at: string; applicant: string; result: ApplicationPack; error?: string }>
+  },
+  dossier: (id: string, force = false) =>
+    fetch(`/api/opportunities/${id}/dossier${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; dossier_at: string; result: Dossier; error?: string }>,
   oppDocxUrl: (id: string) => `/api/opportunities/${id}/cv.docx`,
 }

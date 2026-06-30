@@ -24,24 +24,34 @@ function Nav() {
   )
 }
 
-export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) {
+function CvChip({ profile, label, ai, onCV }: { profile: 'self' | 'partner'; label: string; ai: AiStatus | null; onCV: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const hasCV = !!ai?.cv.uploaded
+  const status = profile === 'self' ? (ai?.cv.profiles?.self ?? ai?.cv) : ai?.cv.profiles?.partner
+  const has = !!status?.uploaded
 
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
     setBusy(true)
-    try {
-      const r = await api.uploadCV(f)
-      if (r.error) toast.error(r.error)
-      else { toast.success('CV uploaded'); onCV() }
-    } catch { toast.error('Upload failed') }
-    setBusy(false)
-    e.target.value = ''
+    try { const r = await api.uploadCV(f, profile); if (r.error) toast.error(r.error); else { toast.success(`${label} CV uploaded`); onCV() } }
+    catch { toast.error('Upload failed') }
+    setBusy(false); e.target.value = ''
   }
+  return (
+    <div className="flex items-center gap-2 rounded-full border bg-card py-1 pl-3 pr-1.5">
+      {has
+        ? <Badge variant="success" className="gap-1 font-medium"><FileText className="h-3 w-3" />{label}</Badge>
+        : <span className="text-xs text-muted-foreground">{label}: none</span>}
+      <Button size="sm" variant="outline" className="h-7 rounded-full px-2.5" disabled={busy} onClick={() => fileRef.current?.click()}>
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+      </Button>
+      <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" hidden onChange={upload} />
+    </div>
+  )
+}
 
+export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b bg-background/80 px-6 py-3 backdrop-blur-xl">
       <div className="flex items-center gap-3">
@@ -52,17 +62,9 @@ export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) 
         </div>
       </div>
       <Nav />
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2.5 rounded-full border bg-card py-1 pl-3.5 pr-1.5">
-          {hasCV
-            ? <Badge variant="success" className="gap-1 font-medium"><FileText className="h-3 w-3" />{ai?.cv.filename}</Badge>
-            : <span className="text-xs text-muted-foreground">{ai?.enabled ? 'No CV uploaded' : 'AI off, add API key'}</span>}
-          <Button size="sm" variant="outline" className="h-7 rounded-full" disabled={busy} onClick={() => fileRef.current?.click()}>
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-            {hasCV ? 'Replace' : 'Upload CV'}
-          </Button>
-          <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" hidden onChange={upload} />
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <CvChip profile="self" label="You" ai={ai} onCV={onCV} />
+        <CvChip profile="partner" label="Partner" ai={ai} onCV={onCV} />
         {ai?.spend && ai.spend.budget_usd > 0 && (
           <div className="rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground" title="AI spend this month">
             AI: <span className="font-medium text-foreground">${ai.spend.spent_usd.toFixed(2)}</span>

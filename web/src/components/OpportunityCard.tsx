@@ -22,6 +22,11 @@ const ELIG: Record<string, { label: string; cls: string }> = {
   no: { label: '⚠ Home-only', cls: 'text-destructive border-destructive/40' },
   unknown: { label: '? eligibility unstated', cls: 'text-muted-foreground' },
 }
+const FOR: Record<string, { label: string; cls: string }> = {
+  partner: { label: '👩‍🔬 for Partner', cls: 'text-[hsl(330_80%_72%)] border-[hsl(330_80%_66%)]/40' },
+  self: { label: '👨‍💻 for You', cls: 'text-[hsl(212_90%_70%)] border-[hsl(212_90%_60%)]/40' },
+  either: { label: '👥 for Either', cls: 'text-muted-foreground' },
+}
 
 export function OpportunityCard({ opp, aiEnabled, onPack }: { opp: Opportunity; aiEnabled: boolean; onPack: (o: Opportunity) => void }) {
   const [status, setStatus] = useState(opp.status)
@@ -48,7 +53,7 @@ export function OpportunityCard({ opp, aiEnabled, onPack }: { opp: Opportunity; 
           <div className="flex shrink-0 gap-2">
             {aiEnabled && (
               <Button size="sm" className="h-8 bg-[hsl(258_90%_66%)] text-white hover:bg-[hsl(258_90%_60%)]" onClick={() => onPack(opp)}>
-                <Sparkles className="h-3.5 w-3.5" />{opp.has_pack ? 'View pack' : 'Application pack'}
+                <Sparkles className="h-3.5 w-3.5" />{opp.has_dossier || opp.has_pack ? 'View' : 'Research & apply'}
               </Button>
             )}
             <Button asChild size="sm" variant="outline" className="h-8">
@@ -61,9 +66,11 @@ export function OpportunityCard({ opp, aiEnabled, onPack }: { opp: Opportunity; 
 
         <div className="flex flex-wrap gap-1.5">
           {tag(opp.type)}
-          {opp.area_cluster && opp.area_cluster !== 'other' && tag(opp.area_cluster)}
+          {tag((FOR[opp.for_applicant] || FOR.either).label, (FOR[opp.for_applicant] || FOR.either).cls)}
           {tag(fund.label, fund.cls)}
           {tag(elig.label, elig.cls)}
+          {opp.scholarship_type && tag(opp.scholarship_type, 'text-success border-success/30')}
+          {opp.contact_email && tag(`✉ ${opp.contact_email}`, 'text-[hsl(212_90%_70%)]')}
           {opp.fit_score ? tag(`fit ${opp.fit_score}`, 'text-primary') : null}
           {opp.deadline_soon && tag(`closes in ${opp.deadline_days}d`, 'text-warning border-warning/40')}
           {opp.needs_followup && tag('follow up', 'text-[hsl(258_90%_72%)] border-[hsl(258_90%_66%)]/40')}

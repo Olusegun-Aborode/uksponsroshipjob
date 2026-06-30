@@ -26,8 +26,9 @@ const HOME_ONLY = [
 const TECH = ['data science', 'data scientist', 'machine learning', 'artificial intelligence', ' ai ', 'deep learning',
   'blockchain', 'distributed ledger', 'fintech', 'computer science', 'software', 'data engineering', 'analytics',
   'informatics', 'quantitative', 'statistics', 'statistical', 'nlp', 'computer vision', 'data-driven'];
-const HEALTH = ['nutrition', 'nutritional', 'dietetic', 'dietary', 'public health', 'epidemiolog', 'health data',
-  'digital health', 'health informatics', 'food science', 'obesity', 'metabolic', 'wellbeing', 'clinical', 'diet '];
+const HEALTH = ['nutrition', 'nutritional', 'dietetic', 'dietitian', 'dietary', 'public health', 'epidemiolog',
+  'health data', 'digital health', 'health informatics', 'food science', 'food security', 'obesity', 'metabolic',
+  'wellbeing', 'clinical', 'diet ', 'maternal', 'community health', 'global health', 'eating', 'malnutrition', 'nutrient'];
 
 function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
 function findPhrase(t, list) { return list.find(p => t.includes(p)) || null; }
@@ -88,10 +89,14 @@ function score(o) {
   let fit = Math.min(100, Math.round(((techHits + healthHits) / 4) * 100));
   if (techHits > 0 && healthHits > 0) fit = Math.min(100, fit + 20);
   const area_cluster = techHits === 0 && healthHits === 0 ? 'other' : (techHits >= healthHits ? 'tech' : 'health');
+  // Who is this opportunity for? Health/nutrition/public-health → partner; data/tech → self;
+  // intersection (e.g. health-data science) or unknown → either.
+  const for_applicant = (techHits > 0 && healthHits > 0) ? 'either'
+    : area_cluster === 'health' ? 'partner' : area_cluster === 'tech' ? 'self' : 'either';
 
   return Object.assign({}, o, {
     type, funding_status, international_eligible, fees_cover, tier, confidence, reason,
-    fit_score: fit, area_cluster
+    fit_score: fit, area_cluster, for_applicant
   });
 }
 

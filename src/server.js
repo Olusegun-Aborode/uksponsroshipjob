@@ -14,6 +14,7 @@ const { runBackup } = require('./backup');
 const { runReminders } = require('./reminders');
 const { runResearchScan } = require('./research/scan');
 const { generatePack } = require('./research/ai');
+const { buildDossier } = require('./research/dossier');
 
 const fs = require('fs');
 const app = express();
@@ -134,11 +135,12 @@ app.get('/api/ai', (req, res) => {
   res.json({ enabled: aiEnabled(), model: MODEL, cv: cvStatus(), spend: spendStatus() });
 });
 
-// --- upload / replace the master CV (PDF, DOCX, TXT, MD) ---
+// --- upload / replace a master CV (PDF, DOCX, TXT, MD). ?profile=self|partner ---
 app.post('/api/cv', upload.single('cv'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  const profile = req.query.profile === 'partner' ? 'partner' : 'self';
   try {
-    const r = await saveCV(req.file.buffer, req.file.originalname);
+    const r = await saveCV(req.file.buffer, req.file.originalname, profile);
     res.json(Object.assign({ ok: true }, r, cvStatus()));
   } catch (e) { res.status(400).json({ error: String(e.message || e) }); }
 });
@@ -213,7 +215,7 @@ app.get('/api/opportunities', (req, res) => {
       match_score: oppMatch(o), deadline_days: dl,
       deadline_soon: dl !== null && dl >= 0 && dl <= DEADLINE_DAYS,
       needs_followup: o.status === 'applied' && daysOld(o.date_applied) !== null && daysOld(o.date_applied) >= FOLLOWUP_DAYS,
-      has_pack: !!o.pack_at,
+      has_pack: !!o.pack_at, has_dossier: !!o.dossier_at,
     });
   });
   const tierRank = { A: 0, B: 1, C: 2, excluded: 3 };
@@ -249,19 +251,48 @@ app.post('/api/opportunities/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// Which person's CV powers an opportunity's pack: explicit ?applicant wins, else the auto-tag
+// (health → partner, tech → self, either → partner if hers is uploaded). Falls back if one is missing.
+function resolveApplicant(opp, override) {
+  const order = override ? [override]
+    : opp.for_applicant === 'self' ? ['self', 'partner']
+    : opp.for_applicant === 'partner' ? ['partner', 'self']
+    : ['partner', 'self']; // 'either' defaults to her (research is primarily hers)
+  for (const a of order) { const t = getCVText(a); if (t) return { applicant: a, cvText: t }; }
+  return { applicant: order[0], cvText: null };
+}
+
 app.post('/api/opportunities/:id/pack', async (req, res) => {
   if (!aiEnabled()) return res.status(400).json({ error: 'AI not configured, add ANTHROPIC_API_KEY.' });
-  const cvText = getCVText();
-  if (!cvText) return res.status(400).json({ error: 'Upload your CV first.' });
   const opp = db.prepare('SELECT * FROM opportunities WHERE id=?').get(req.params.id);
   if (!opp) return res.status(404).json({ error: 'Opportunity not found.' });
-  if (!req.query.force && opp.pack_json) return res.json({ cached: true, pack_at: opp.pack_at, result: JSON.parse(opp.pack_json) });
+  const override = req.query.applicant === 'partner' ? 'partner' : req.query.applicant === 'self' ? 'self' : null;
+  const { applicant, cvText } = resolveApplicant(opp, override);
+  if (!cvText) return res.status(400).json({ error: `Upload the ${applicant === 'partner' ? "partner's" : 'your'} CV first.` });
+  // Cache is per applicant.
+  if (!req.query.force && opp.pack_json) { const c = JSON.parse(opp.pack_json); if (c._applicant === applicant) return res.json({ cached: true, pack_at: opp.pack_at, applicant, result: c }); }
   try {
     const result = await generatePack(opp, cvText);
+    result._applicant = applicant;
     const now = new Date().toISOString();
     db.prepare('UPDATE opportunities SET pack_json=?, pack_at=? WHERE id=?').run(JSON.stringify(result), now, opp.id);
-    res.json({ cached: false, pack_at: now, result });
+    res.json({ cached: false, pack_at: now, applicant, result });
   } catch (e) { console.error('pack failed:', e); res.status(500).json({ error: String(e.message || e) }); }
+});
+
+// --- deep research dossier (Claude + web search), cached. The one-stop-shop info. ---
+app.post('/api/opportunities/:id/dossier', async (req, res) => {
+  if (!aiEnabled()) return res.status(400).json({ error: 'AI not configured, add ANTHROPIC_API_KEY.' });
+  const opp = db.prepare('SELECT * FROM opportunities WHERE id=?').get(req.params.id);
+  if (!opp) return res.status(404).json({ error: 'Opportunity not found.' });
+  if (!req.query.force && opp.dossier_json) return res.json({ cached: true, dossier_at: opp.dossier_at, result: JSON.parse(opp.dossier_json) });
+  try {
+    const result = await buildDossier(opp);
+    const now = new Date().toISOString();
+    db.prepare('UPDATE opportunities SET dossier_json=?, dossier_at=?, scholarship_type=?, contact_email=? WHERE id=?')
+      .run(JSON.stringify(result), now, result.scholarship_type || '', result.contact_email || '', opp.id);
+    res.json({ cached: false, dossier_at: now, result });
+  } catch (e) { console.error('dossier failed:', e); res.status(500).json({ error: String(e.message || e) }); }
 });
 
 app.get('/api/opportunities/:id/cv.docx', async (req, res) => {

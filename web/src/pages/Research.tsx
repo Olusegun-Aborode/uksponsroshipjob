@@ -41,10 +41,9 @@ export default function Research() {
   useEffect(() => { loadAi(); loadStats(); loadScans() }, [loadAi, loadStats, loadScans])
   useEffect(() => { loadOpps() }, [loadOpps])
 
-  function openPack(o: Opportunity) { if (!ai?.cv.uploaded) return; setSheetOpp(o); setSheetOpen(true) }
-  function onGenerated(id: string, at: string) {
-    setOpps((xs) => xs.map((o) => (o.id === id ? { ...o, pack_at: at, has_pack: true } : o)))
-    setSheetOpp((o) => (o && o.id === id ? { ...o, pack_at: at, has_pack: true } : o))
+  function openPack(o: Opportunity) { setSheetOpp(o); setSheetOpen(true) }
+  function onGenerated(id: string) {
+    setOpps((xs) => xs.map((o) => (o.id === id ? { ...o, has_pack: true, has_dossier: true } : o)))
   }
 
   async function runScan() {

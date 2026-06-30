@@ -138,6 +138,15 @@ if (!srCols.has('kind')) db.exec("ALTER TABLE scan_runs ADD COLUMN kind TEXT DEF
 db.exec('CREATE INDEX IF NOT EXISTS idx_opps_tier ON opportunities(tier)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_opps_fingerprint ON opportunities(fingerprint)');
 
+// Opportunity columns added after the section first shipped (works on fresh + existing DBs).
+const oppCols = new Set(db.prepare('PRAGMA table_info(opportunities)').all().map(c => c.name));
+for (const [col, ddl] of [
+  ['for_applicant', 'TEXT'], ['scholarship_type', 'TEXT'], ['contact_email', 'TEXT'],
+  ['dossier_json', 'TEXT'], ['dossier_at', 'TEXT']
+]) {
+  if (!oppCols.has(col)) db.exec(`ALTER TABLE opportunities ADD COLUMN ${col} ${ddl}`);
+}
+
 // Insert a job if new; if it already exists, refresh ONLY machine-owned fields.
 const insertStmt = db.prepare(`
 INSERT INTO jobs (id,title,employer,location,region,category,salary,salary_min,salary_max,url,source,description,
@@ -173,9 +182,9 @@ function upsertJob(job) {
 // --- opportunities: insert if new; on re-scan refresh ONLY machine fields (protect user + AI cache) ---
 const oppInsert = db.prepare(`
 INSERT INTO opportunities (id,title,institution,department,supervisor,type,area_cluster,location,url,source,description,deadline,
-  funding_status,funding_source,stipend,fees_cover,international_eligible,tier,confidence,reason,fit_score,fingerprint,first_seen,last_seen)
+  funding_status,funding_source,stipend,fees_cover,international_eligible,tier,confidence,reason,fit_score,for_applicant,fingerprint,first_seen,last_seen)
 VALUES (@id,@title,@institution,@department,@supervisor,@type,@area_cluster,@location,@url,@source,@description,@deadline,
-  @funding_status,@funding_source,@stipend,@fees_cover,@international_eligible,@tier,@confidence,@reason,@fit_score,@fingerprint,@now,@now)
+  @funding_status,@funding_source,@stipend,@fees_cover,@international_eligible,@tier,@confidence,@reason,@fit_score,@for_applicant,@fingerprint,@now,@now)
 `);
 const oppUpdate = db.prepare(`
 UPDATE opportunities SET
@@ -183,7 +192,7 @@ UPDATE opportunities SET
   area_cluster=@area_cluster, location=@location, url=@url, source=@source, description=@description, deadline=@deadline,
   funding_status=@funding_status, funding_source=@funding_source, stipend=@stipend, fees_cover=@fees_cover,
   international_eligible=@international_eligible, tier=@tier, confidence=@confidence, reason=@reason, fit_score=@fit_score,
-  fingerprint=@fingerprint, last_seen=@now
+  for_applicant=@for_applicant, fingerprint=@fingerprint, last_seen=@now
 WHERE id=@id
 `);
 const oppExists = db.prepare('SELECT id FROM opportunities WHERE id = ?');
@@ -192,7 +201,7 @@ function upsertOpportunity(o) {
   const now = new Date().toISOString();
   const row = Object.assign({
     now, department: '', supervisor: '', location: '', description: '', deadline: '',
-    funding_source: '', stipend: '', fingerprint: ''
+    funding_source: '', stipend: '', fingerprint: '', for_applicant: 'either'
   }, o);
   if (oppExists.get(o.id)) { oppUpdate.run(row); return 'updated'; }
   oppInsert.run(row); return 'inserted';
