@@ -54,11 +54,51 @@ CREATE TABLE IF NOT EXISTS register (
 
 CREATE TABLE IF NOT EXISTS scan_runs (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind        TEXT DEFAULT 'jobs',           -- jobs | research
   started_at  TEXT,
   finished_at TEXT,
   total_found INTEGER DEFAULT 0,
   new_jobs    INTEGER DEFAULT 0,
   employers_checked INTEGER DEFAULT 0
+);
+
+-- Funded research opportunities (PhD studentships, postdocs/fellows, fellowships & scholarships).
+-- A funded PhD = Student visa; salaried research roles = Skilled Worker. Scored on funding + eligibility.
+CREATE TABLE IF NOT EXISTS opportunities (
+  id            TEXT PRIMARY KEY,
+  title         TEXT NOT NULL,
+  institution   TEXT NOT NULL,
+  department    TEXT,
+  supervisor    TEXT,
+  type          TEXT,                        -- phd | postdoc | fellowship | scholarship
+  area_cluster  TEXT,                        -- tech | health | other
+  location      TEXT,
+  url           TEXT,
+  source        TEXT,                        -- adzuna | scheme | scraper | ...
+  description   TEXT,
+  deadline      TEXT,                        -- machine-extracted closing date, if any
+  -- machine-owned scoring (refreshed every scan) --
+  funding_status        TEXT,               -- fully | partial | unfunded | unknown | salaried
+  funding_source        TEXT,
+  stipend               TEXT,
+  fees_cover            TEXT,               -- international | home | unknown
+  international_eligible TEXT,              -- yes | no | unknown
+  tier          TEXT,                        -- A | B | C | excluded
+  confidence    INTEGER,
+  reason        TEXT,
+  fit_score     INTEGER,
+  fingerprint   TEXT,
+  first_seen    TEXT,
+  last_seen     TEXT,
+  -- user-owned (NEVER overwritten by a scan) --
+  status        TEXT DEFAULT 'new',          -- new|interested|applied|interviewing|offer|rejected|not_suitable
+  user_notes    TEXT DEFAULT '',
+  date_applied  TEXT DEFAULT '',
+  deadline_user TEXT DEFAULT '',
+  user_flagged  INTEGER DEFAULT 0,
+  -- AI cache --
+  pack_json     TEXT,
+  pack_at       TEXT
 );
 
 CREATE TABLE IF NOT EXISTS meta (
@@ -92,6 +132,12 @@ for (const [col, ddl] of [
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_jobs_fingerprint ON jobs(fingerprint)');
 
+// scan_runs.kind for DBs created before the research section existed.
+const srCols = new Set(db.prepare('PRAGMA table_info(scan_runs)').all().map(c => c.name));
+if (!srCols.has('kind')) db.exec("ALTER TABLE scan_runs ADD COLUMN kind TEXT DEFAULT 'jobs'");
+db.exec('CREATE INDEX IF NOT EXISTS idx_opps_tier ON opportunities(tier)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_opps_fingerprint ON opportunities(fingerprint)');
+
 // Insert a job if new; if it already exists, refresh ONLY machine-owned fields.
 const insertStmt = db.prepare(`
 INSERT INTO jobs (id,title,employer,location,region,category,salary,salary_min,salary_max,url,source,description,
@@ -124,4 +170,32 @@ function upsertJob(job) {
   insertStmt.run(row); return 'inserted';
 }
 
-module.exports = { db, upsertJob };
+// --- opportunities: insert if new; on re-scan refresh ONLY machine fields (protect user + AI cache) ---
+const oppInsert = db.prepare(`
+INSERT INTO opportunities (id,title,institution,department,supervisor,type,area_cluster,location,url,source,description,deadline,
+  funding_status,funding_source,stipend,fees_cover,international_eligible,tier,confidence,reason,fit_score,fingerprint,first_seen,last_seen)
+VALUES (@id,@title,@institution,@department,@supervisor,@type,@area_cluster,@location,@url,@source,@description,@deadline,
+  @funding_status,@funding_source,@stipend,@fees_cover,@international_eligible,@tier,@confidence,@reason,@fit_score,@fingerprint,@now,@now)
+`);
+const oppUpdate = db.prepare(`
+UPDATE opportunities SET
+  title=@title, institution=@institution, department=@department, supervisor=@supervisor, type=@type,
+  area_cluster=@area_cluster, location=@location, url=@url, source=@source, description=@description, deadline=@deadline,
+  funding_status=@funding_status, funding_source=@funding_source, stipend=@stipend, fees_cover=@fees_cover,
+  international_eligible=@international_eligible, tier=@tier, confidence=@confidence, reason=@reason, fit_score=@fit_score,
+  fingerprint=@fingerprint, last_seen=@now
+WHERE id=@id
+`);
+const oppExists = db.prepare('SELECT id FROM opportunities WHERE id = ?');
+
+function upsertOpportunity(o) {
+  const now = new Date().toISOString();
+  const row = Object.assign({
+    now, department: '', supervisor: '', location: '', description: '', deadline: '',
+    funding_source: '', stipend: '', fingerprint: ''
+  }, o);
+  if (oppExists.get(o.id)) { oppUpdate.run(row); return 'updated'; }
+  oppInsert.run(row); return 'inserted';
+}
+
+module.exports = { db, upsertJob, upsertOpportunity };

@@ -40,6 +40,10 @@ services:
         sync: false
       - key: AI_MONTHLY_BUDGET_USD
         sync: false
+      - key: RESEARCH_SCRAPER_URL
+        sync: false
+      - key: RESEARCH_SCRAPER_TOKEN
+        sync: false
     disk:
       name: data
       mountPath: /app/data

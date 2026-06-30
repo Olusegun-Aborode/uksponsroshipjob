@@ -1,10 +1,28 @@
 import { useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
-import { FileText, Upload, Loader2 } from 'lucide-react'
+import { FileText, Upload, Loader2, Briefcase, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Countdown } from './Countdown'
 import { api, type AiStatus } from '@/lib/api'
+import { cn } from '@/lib/utils'
+
+function Nav() {
+  const { pathname } = useLocation()
+  const item = (to: string, label: string, Icon: typeof Briefcase) => (
+    <Link to={to} className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
+      pathname === to ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
+      <Icon className="h-3.5 w-3.5" />{label}
+    </Link>
+  )
+  return (
+    <div className="flex items-center gap-1 rounded-lg border bg-background/60 p-1">
+      {item('/', 'Jobs', Briefcase)}
+      {item('/research', 'Research & Funding', GraduationCap)}
+    </div>
+  )
+}
 
 export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -30,9 +48,10 @@ export function Header({ ai, onCV }: { ai: AiStatus | null; onCV: () => void }) 
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-[hsl(155_70%_45%)] text-sm font-extrabold text-primary-foreground shadow-lg shadow-primary/30">SJ</div>
         <div>
           <h1 className="text-[17px] font-bold tracking-tight">Sponsorship Job Board</h1>
-          <p className="text-[11px] text-muted-foreground">Graduate → Skilled Worker · UK-wide · ranked by CoS confidence</p>
+          <p className="text-[11px] text-muted-foreground">Graduate → Skilled Worker · UK-wide</p>
         </div>
       </div>
+      <Nav />
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2.5 rounded-full border bg-card py-1 pl-3.5 pr-1.5">
           {hasCV

@@ -185,4 +185,4 @@ async function interviewPrep(job, cvText) {
   return d;
 }
 
-module.exports = { tailorForJob, interviewPrep, aiEnabled, spendStatus, MODEL };
+module.exports = { tailorForJob, interviewPrep, aiEnabled, spendStatus, MODEL, getClient, assertBudget, recordSpend, noDashes };

@@ -72,6 +72,44 @@ export type TailorResult = {
   skill_gaps: SkillGap[]
 }
 
+// ----- Research & Funding -----
+export type Opportunity = {
+  id: string
+  title: string
+  institution: string
+  department: string
+  supervisor: string
+  type: string
+  area_cluster: string
+  location: string
+  url: string
+  source: string
+  deadline: string
+  funding_status: string
+  fees_cover: string
+  international_eligible: string
+  tier: string
+  confidence: number
+  reason: string
+  fit_score: number
+  status: string
+  user_notes: string
+  date_applied: string
+  deadline_user: string
+  user_flagged: number
+  pack_at: string | null
+  match_score: number
+  deadline_days: number | null
+  deadline_soon: boolean
+  needs_followup: boolean
+  has_pack: boolean
+}
+export type ResearchStats = { total: number; byTier: Record<string, number>; byType: Record<string, number>; byStatus: Record<string, number> }
+export type ApplicationPack = {
+  fit_summary: string; fit_score: number; academic_cv_markdown: string; statement_of_purpose: string
+  supervisor_email: string; eligibility_check: string; questions_to_ask: string[]
+}
+
 const j = (r: Response) => r.json()
 
 export const api = {
@@ -89,4 +127,15 @@ export const api = {
   prep: (id: string, force = false) =>
     fetch(`/api/jobs/${id}/prep${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; prep_at: string; result: InterviewPrep; error?: string }>,
   docxUrl: (id: string) => `/api/jobs/${id}/cv.docx`,
+
+  // research
+  opportunities: (params: Record<string, string>) => fetch('/api/opportunities?' + new URLSearchParams(params)).then(j) as Promise<Opportunity[]>,
+  researchStats: () => fetch('/api/research/stats').then(j) as Promise<ResearchStats>,
+  researchScans: () => fetch('/api/research/scans').then(j) as Promise<ScanRun[]>,
+  researchScan: () => fetch('/api/research/scan', { method: 'POST' }).then(j),
+  updateOpp: (id: string, body: Record<string, unknown>) =>
+    fetch('/api/opportunities/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
+  pack: (id: string, force = false) =>
+    fetch(`/api/opportunities/${id}/pack${force ? '?force=1' : ''}`, { method: 'POST' }).then(j) as Promise<{ cached: boolean; pack_at: string; result: ApplicationPack; error?: string }>,
+  oppDocxUrl: (id: string) => `/api/opportunities/${id}/cv.docx`,
 }

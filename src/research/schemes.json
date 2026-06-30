@@ -1,0 +1,85 @@
+{
+  "_note": "Curated UK PhD/research funding schemes open to international students. Deadlines vary each cycle, so we don't hard-code a date; check the link. Descriptions deliberately state funding + eligibility so the scorer tiers them correctly.",
+  "schemes": [
+    {
+      "id": "scheme-commonwealth-phd",
+      "title": "Commonwealth PhD Scholarships",
+      "institution": "Commonwealth Scholarship Commission (UK)",
+      "type": "scholarship",
+      "url": "https://cscuk.fcdo.gov.uk/scholarships/commonwealth-phd-scholarships/",
+      "description": "Fully funded PhD scholarships for students from Commonwealth countries (including Nigeria) to study in the UK. Covers full tuition fees, monthly stipend, and airfare. Open to international students from low and middle income Commonwealth countries. Applications typically open August to October each year."
+    },
+    {
+      "id": "scheme-gates-cambridge",
+      "title": "Gates Cambridge Scholarship",
+      "institution": "University of Cambridge",
+      "type": "scholarship",
+      "url": "https://www.gatescambridge.org/",
+      "description": "Fully funded postgraduate scholarship at Cambridge, open to international students from all countries outside the UK. Covers full tuition fees, a maintenance stipend, and additional allowances. Deadlines align with the Cambridge course deadline, typically October to December."
+    },
+    {
+      "id": "scheme-clarendon-oxford",
+      "title": "Clarendon Scholarships",
+      "institution": "University of Oxford",
+      "type": "scholarship",
+      "url": "https://www.ox.ac.uk/clarendon",
+      "description": "Fully funded graduate scholarships at Oxford, open to international students of all nationalities. Covers full tuition fees and a generous grant for living costs. Considered automatically with your Oxford application; apply by the relevant course deadline (December to January)."
+    },
+    {
+      "id": "scheme-mastercard-foundation",
+      "title": "Mastercard Foundation Scholars Program",
+      "institution": "Mastercard Foundation (UK partner universities)",
+      "type": "scholarship",
+      "url": "https://mastercardfdn.org/our-programs/scholars-program/",
+      "description": "Fully funded scholarships for academically talented students from Africa, including Nigeria, at partner universities. Covers tuition fees, stipend, accommodation and more. Open to international students from Africa. Cycle varies by partner university."
+    },
+    {
+      "id": "scheme-great-nigeria",
+      "title": "GREAT Scholarships (Nigeria)",
+      "institution": "British Council + UK universities",
+      "type": "scholarship",
+      "url": "https://study-uk.britishcouncil.org/scholarships/great-scholarships",
+      "description": "Scholarships of at least 10,000 GBP towards tuition fees for one-year postgraduate study, open to international students from selected countries including Nigeria. Funding covers part of fees. Applications typically open spring to summer each year."
+    },
+    {
+      "id": "scheme-msca-doctoral",
+      "title": "Marie Sklodowska-Curie Doctoral Networks",
+      "institution": "European Commission / host institutions",
+      "type": "fellowship",
+      "url": "https://marie-sklodowska-curie-actions.ec.europa.eu/actions/doctoral-networks",
+      "description": "Fully funded doctoral positions across research networks, open to international students of any nationality with strong mobility funding. Covers salary, mobility and family allowances. Individual positions advertised year-round by host institutions."
+    },
+    {
+      "id": "scheme-wellcome-phd",
+      "title": "Wellcome Trust PhD Programmes",
+      "institution": "Wellcome Trust (UK universities)",
+      "type": "fellowship",
+      "url": "https://wellcome.org/grant-funding/schemes",
+      "description": "Fully funded PhD programmes in health, biomedical and data science research, open to international students. Covers full fees, a stipend, and research costs. Strong fit for health data, public health and nutrition research. Deadlines vary by programme, often autumn to winter."
+    },
+    {
+      "id": "scheme-chevening",
+      "title": "Chevening Scholarships (Master's)",
+      "institution": "UK Government (FCDO)",
+      "type": "scholarship",
+      "url": "https://www.chevening.org/",
+      "description": "Fully funded one-year Master's scholarships for international students including Nigeria. Covers tuition, stipend, travel and more. Applications typically open August to November. Master's level rather than PhD, but a route to UK study and networks."
+    },
+    {
+      "id": "scheme-developing-solutions",
+      "title": "Developing Solutions Masters Scholarship",
+      "institution": "University of Nottingham",
+      "type": "scholarship",
+      "url": "https://www.nottingham.ac.uk/studywithus/international-applicants/scholarships-fees-and-finance/scholarships/developing-solutions-masters-scholarship.aspx",
+      "description": "Scholarships for international students from Africa (including Nigeria) and other regions, covering 50 to 100 percent of tuition fees for Master's study in fields including engineering, science and public health. Applications typically open winter to spring."
+    },
+    {
+      "id": "scheme-leverhulme-doctoral",
+      "title": "Leverhulme Doctoral Scholarships",
+      "institution": "Leverhulme Trust (UK universities)",
+      "type": "fellowship",
+      "url": "https://www.leverhulme.ac.uk/doctoral-scholarships",
+      "description": "Doctoral scholarship cohorts across UK universities. Funding covers fees and stipend; international eligibility varies by host centre so confirm with the advertising university. Cohorts advertised through the host institutions."
+    }
+  ]
+}

@@ -12,6 +12,8 @@ const { tailorForJob, interviewPrep, aiEnabled, spendStatus, MODEL } = require('
 const { cvDocx } = require('./docx');
 const { runBackup } = require('./backup');
 const { runReminders } = require('./reminders');
+const { runResearchScan } = require('./research/scan');
+const { generatePack } = require('./research/ai');
 
 const fs = require('fs');
 const app = express();
@@ -105,10 +107,10 @@ app.get('/api/stats', (req, res) => {
     byStatus: by('status'), byTier: by('tier') });
 });
 
-// --- scan log: what was scanned, when, and how it went ---
+// --- scan log: what was scanned, when, and how it went (jobs scans only) ---
+const srcStmt = db.prepare('SELECT source,query,status,count,error FROM source_results WHERE run_id = ?');
 app.get('/api/scans', (req, res) => {
-  const runs = db.prepare('SELECT * FROM scan_runs ORDER BY id DESC LIMIT 12').all();
-  const srcStmt = db.prepare('SELECT source,query,status,count,error FROM source_results WHERE run_id = ?');
+  const runs = db.prepare("SELECT * FROM scan_runs WHERE kind='jobs' ORDER BY id DESC LIMIT 12").all();
   res.json(runs.map(r => Object.assign({}, r, { sources: srcStmt.all(r.id) })));
 });
 
@@ -190,6 +192,101 @@ app.post('/api/jobs/:id/prep', async (req, res) => {
   } catch (e) { console.error('prep failed:', e); res.status(500).json({ error: String(e.message || e) }); }
 });
 
+// ===================== RESEARCH & FUNDING (funded PhDs, postdocs, fellowships) =====================
+const oppMatch = o => o.tier === 'excluded' ? -1 : Math.round(0.6 * (o.confidence || 0) + 0.4 * (o.fit_score || 0));
+
+// --- opportunities feed, filterable + sortable. Hard gate (fully-funded + international-open) by default. ---
+app.get('/api/opportunities', (req, res) => {
+  const { type, area, funding, eligibility, q, sort, includeIneligible } = req.query;
+  const where = [], args = [];
+  if (type && type !== 'all') { where.push('type = ?'); args.push(type); }
+  if (area && area !== 'all') { where.push('area_cluster = ?'); args.push(area); }
+  if (funding && funding !== 'all') { where.push('funding_status = ?'); args.push(funding); }
+  if (eligibility && eligibility !== 'all') { where.push('international_eligible = ?'); args.push(eligibility); }
+  // Default hard gate: only Tier A (fully funded + international-open, or open salaried research) and B
+  // (funded, eligibility unstated). The toggle reveals Home-only / unfunded.
+  if (!includeIneligible) where.push("tier IN ('A','B')");
+  if (q) { where.push('(lower(title) LIKE ? OR lower(institution) LIKE ?)'); const t = '%' + q.toLowerCase() + '%'; args.push(t, t); }
+  let rows = db.prepare(`SELECT * FROM opportunities ${where.length ? 'WHERE ' + where.join(' AND ') : ''}`).all(...args).map(o => {
+    const dl = daysUntil(o.deadline_user || o.deadline);
+    return Object.assign(o, {
+      match_score: oppMatch(o), deadline_days: dl,
+      deadline_soon: dl !== null && dl >= 0 && dl <= DEADLINE_DAYS,
+      needs_followup: o.status === 'applied' && daysOld(o.date_applied) !== null && daysOld(o.date_applied) >= FOLLOWUP_DAYS,
+      has_pack: !!o.pack_at,
+    });
+  });
+  const tierRank = { A: 0, B: 1, C: 2, excluded: 3 };
+  if (sort === 'tier') rows.sort((a, b) => (tierRank[a.tier] - tierRank[b.tier]) || (b.confidence - a.confidence));
+  else rows.sort((a, b) => (b.match_score - a.match_score) || (b.last_seen > a.last_seen ? 1 : -1));
+  res.json(rows);
+});
+
+app.get('/api/research/stats', (req, res) => {
+  const by = col => db.prepare(`SELECT ${col} k, COUNT(*) n FROM opportunities GROUP BY ${col}`).all().reduce((a, r) => (a[r.k] = r.n, a), {});
+  res.json({
+    total: db.prepare("SELECT COUNT(*) n FROM opportunities WHERE tier IN ('A','B')").get().n,
+    byTier: by('tier'), byType: by('type'), byStatus: by('status'),
+  });
+});
+
+app.get('/api/research/scans', (req, res) => {
+  const runs = db.prepare("SELECT * FROM scan_runs WHERE kind='research' ORDER BY id DESC LIMIT 8").all();
+  res.json(runs.map(r => Object.assign({}, r, { sources: srcStmt.all(r.id) })));
+});
+
+app.post('/api/opportunities/:id', (req, res) => {
+  const { status, user_notes, date_applied, deadline_user, user_flagged } = req.body;
+  const sets = [], args = [];
+  if (status !== undefined) { sets.push('status=?'); args.push(status); }
+  if (user_notes !== undefined) { sets.push('user_notes=?'); args.push(user_notes); }
+  if (date_applied !== undefined) { sets.push('date_applied=?'); args.push(date_applied); }
+  if (deadline_user !== undefined) { sets.push('deadline_user=?'); args.push(deadline_user); }
+  if (user_flagged !== undefined) { sets.push('user_flagged=?'); args.push(user_flagged ? 1 : 0); }
+  if (!sets.length) return res.json({ ok: true });
+  args.push(req.params.id);
+  db.prepare(`UPDATE opportunities SET ${sets.join(',')} WHERE id=?`).run(...args);
+  res.json({ ok: true });
+});
+
+app.post('/api/opportunities/:id/pack', async (req, res) => {
+  if (!aiEnabled()) return res.status(400).json({ error: 'AI not configured, add ANTHROPIC_API_KEY.' });
+  const cvText = getCVText();
+  if (!cvText) return res.status(400).json({ error: 'Upload your CV first.' });
+  const opp = db.prepare('SELECT * FROM opportunities WHERE id=?').get(req.params.id);
+  if (!opp) return res.status(404).json({ error: 'Opportunity not found.' });
+  if (!req.query.force && opp.pack_json) return res.json({ cached: true, pack_at: opp.pack_at, result: JSON.parse(opp.pack_json) });
+  try {
+    const result = await generatePack(opp, cvText);
+    const now = new Date().toISOString();
+    db.prepare('UPDATE opportunities SET pack_json=?, pack_at=? WHERE id=?').run(JSON.stringify(result), now, opp.id);
+    res.json({ cached: false, pack_at: now, result });
+  } catch (e) { console.error('pack failed:', e); res.status(500).json({ error: String(e.message || e) }); }
+});
+
+app.get('/api/opportunities/:id/cv.docx', async (req, res) => {
+  const opp = db.prepare('SELECT pack_json, title, institution FROM opportunities WHERE id=?').get(req.params.id);
+  if (!opp || !opp.pack_json) return res.status(404).json({ error: 'No application pack yet, generate one first.' });
+  try {
+    const md = JSON.parse(opp.pack_json).academic_cv_markdown || '';
+    const buf = await cvDocx(md);
+    const safe = ('Olusegun Aborode - ' + (opp.institution || '') + ' ' + (opp.title || '')).replace(/[^a-z0-9 .-]/gi, '').slice(0, 80).trim() || 'CV';
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${safe}.docx"`);
+    res.send(buf);
+  } catch (e) { console.error('opp docx failed:', e); res.status(500).json({ error: String(e.message || e) }); }
+});
+
+let researchScanning = false;
+app.post('/api/research/scan', async (req, res) => {
+  if (researchScanning) return res.status(409).json({ error: 'research scan already running' });
+  researchScanning = true;
+  res.json({ started: true });
+  try { const r = await runResearchScan(); console.log('On-demand research scan:', r); }
+  catch (e) { console.error(e); }
+  finally { researchScanning = false; }
+});
+
 // --- trigger a scan on demand ---
 let scanning = false;
 app.post('/api/scan', async (req, res) => {
@@ -220,6 +317,11 @@ app.listen(PORT, () => console.log(`Board running at http://localhost:${PORT} (s
       scanning = true;
       runScan().then(r => console.log('Initial scan:', r)).catch(e => console.error('Initial scan failed:', e)).finally(() => { scanning = false; });
     }
+    if (db.prepare('SELECT COUNT(*) n FROM opportunities').get().n === 0 && !researchScanning) {
+      console.log('First boot: running initial research scan…');
+      researchScanning = true;
+      runResearchScan().then(r => console.log('Initial research scan:', r)).catch(e => console.error('Initial research scan failed:', e)).finally(() => { researchScanning = false; });
+    }
   } catch (e) { console.error('Bootstrap failed:', e.message); }
 })();
 
@@ -230,6 +332,15 @@ cron.schedule('0 */3 * * *', async () => {
   try { const r = await runScan(); console.log('Scheduled scan:', r); }
   catch (e) { console.error('Scheduled scan failed:', e); }
   finally { scanning = false; }
+});
+
+// Research opportunities move slower than jobs: scan once a day (06:30).
+cron.schedule('30 6 * * *', async () => {
+  if (researchScanning) return;
+  researchScanning = true;
+  try { const r = await runResearchScan(); console.log('Scheduled research scan:', r); }
+  catch (e) { console.error('Research scan failed:', e); }
+  finally { researchScanning = false; }
 });
 
 // Daily DB backup (07:50) so tracking + generated CVs survive a disk loss.
