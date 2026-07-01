@@ -28,7 +28,11 @@ const TECH = ['data science', 'data scientist', 'machine learning', 'artificial 
   'informatics', 'quantitative', 'statistics', 'statistical', 'nlp', 'computer vision', 'data-driven'];
 const HEALTH = ['nutrition', 'nutritional', 'dietetic', 'dietitian', 'dietary', 'public health', 'epidemiolog',
   'health data', 'digital health', 'health informatics', 'food science', 'food security', 'obesity', 'metabolic',
-  'wellbeing', 'clinical', 'diet ', 'maternal', 'community health', 'global health', 'eating', 'malnutrition', 'nutrient'];
+  'wellbeing', 'clinical', 'diet ', 'maternal', 'community health', 'global health', 'eating', 'malnutrition', 'nutrient',
+  'health services', 'health economics', 'population health', 'biostatistic', 'food policy', 'sports nutrition',
+  'physical activity', 'non-communicable', 'diabetes', 'cardiovascular', 'gut microbiome', 'microbiome',
+  'health promotion', 'preventive', 'nutrition science', 'child health', 'health inequalities', 'social prescribing',
+  'behavioural science health', 'clinical trial', 'weight management', 'gastroenterology', 'endocrin', 'health policy'];
 
 function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
 function findPhrase(t, list) { return list.find(p => t.includes(p)) || null; }

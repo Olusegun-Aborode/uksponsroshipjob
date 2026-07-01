@@ -25,7 +25,13 @@ const DEFAULT_QUERIES = [
   'phd data science', 'phd machine learning', 'research fellow health data',
   // her cluster (nutrition / dietetics / public health) — the majority of research is for her
   'phd nutrition', 'phd dietetics', 'phd public health', 'phd epidemiology', 'phd food science',
-  'postdoctoral public health', 'research fellow nutrition', 'research associate public health'
+  'postdoctoral public health', 'research fellow nutrition', 'research associate public health',
+  'phd nutritional sciences', 'phd dietitian', 'phd global health', 'phd health services research',
+  'phd maternal child nutrition', 'phd obesity', 'phd diabetes nutrition', 'phd food policy',
+  'phd biostatistics', 'phd health economics', 'phd community health', 'phd population health',
+  'postdoctoral nutrition', 'postdoctoral epidemiology', 'research fellow dietetics',
+  'research fellow public health', 'research associate nutrition', 'clinical research nutrition',
+  'phd sports nutrition', 'phd physical activity health', 'phd non-communicable disease'
 ];
 
 async function runResearchScan() {

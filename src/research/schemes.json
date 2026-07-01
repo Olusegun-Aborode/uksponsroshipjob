@@ -74,6 +74,30 @@
       "description": "Scholarships for international students from Africa (including Nigeria) and other regions, covering 50 to 100 percent of tuition fees for Master's study in fields including engineering, science and public health. Applications typically open winter to spring."
     },
     {
+      "id": "scheme-lshtm",
+      "title": "LSHTM Scholarships (Public Health, Nutrition, Epidemiology)",
+      "institution": "London School of Hygiene & Tropical Medicine",
+      "type": "scholarship",
+      "url": "https://www.lshtm.ac.uk/study/fees-and-funding/scholarships",
+      "description": "Scholarships for international students at the UK's leading public health and tropical medicine school, spanning public health, nutrition, epidemiology and global health. A strong fit for a dietitian moving into public-health research. Many cover full fees and stipend; open to international students. Deadlines vary by scheme, often winter to spring."
+    },
+    {
+      "id": "scheme-nihr-global-health",
+      "title": "NIHR Global Health Research (Fellowships & Studentships)",
+      "institution": "National Institute for Health and Care Research",
+      "type": "fellowship",
+      "url": "https://www.nihr.ac.uk/explore-nihr/funding-programmes/global-health.htm",
+      "description": "Funds public health, nutrition and health-systems research in and for low and middle income countries, open to international researchers including from Nigeria. Fully funded fellowships and studentships covering salary or stipend, fees and research costs. Strong fit for public health and nutrition. Calls open periodically."
+    },
+    {
+      "id": "scheme-who-tdr",
+      "title": "TDR Postgraduate Training Scholarships (WHO)",
+      "institution": "WHO / partner UK universities",
+      "type": "scholarship",
+      "url": "https://tdr.who.int/grants",
+      "description": "Global health research training scholarships from the WHO Special Programme for Research and Training in Tropical Diseases, open to applicants from low and middle income countries including Nigeria, at partner institutions including in the UK. Covers fees and stipend for public health and infectious disease research. Calls open periodically."
+    },
+    {
       "id": "scheme-leverhulme-doctoral",
       "title": "Leverhulme Doctoral Scholarships",
       "institution": "Leverhulme Trust (UK universities)",
